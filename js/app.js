@@ -1,4 +1,4 @@
-import { ELEM_ICON, TOKENS, HEROES, createDefaultState, getMaxLv } from './data.js';
+import { ELEM_ICON, ELEM_ART, TOKENS, HEROES, createDefaultState, getMaxLv } from './data.js';
 import { createInst, pullOnce } from './gacha.js';
 import { getLeadBonuses, computeStats, grantExp, getElementalMultiplier } from './combat.js';
 import { initFirebaseSync } from './firebase.js';
@@ -425,14 +425,19 @@ function renderHome() {
       const h = HEROES.find(x => x.id === inst.heroId);
       const isLead = i === 0;
       const card = document.createElement('div');
-      card.className = `float-hero glass rounded-2xl border p-3 sm:p-4 flex flex-col items-center gap-1 r-${h.rarity} ${isLead ? 'scale-110 z-10 shadow-2xl' : 'opacity-90 scale-95'}`;
+      card.className = `float-hero relative flex flex-col items-center cursor-pointer ${isLead ? 'scale-110 z-10' : 'opacity-95 scale-95'}`;
       card.style.animationDelay = `${i * 0.45}s`;
       card.innerHTML = `
-        <span class="text-[10px] font-bold uppercase ${isLead ? 'text-amber-300' : 'text-slate-400'}">${isLead ? '★ Lead' : 'Ally'}</span>
-        <span class="text-3xl sm:text-4xl my-1">${ELEM_ICON[h.element]}</span>
-        <span class="text-xs font-bold text-white whitespace-nowrap">${h.name}</span>
-        <span class="text-[10px] text-amber-300">${'★'.repeat(inst.star)} Lv.${inst.level}</span>
+        <div class="w-20 h-24 sm:w-28 sm:h-32 rounded-xl overflow-hidden border-2 ${isLead ? 'border-amber-400 shadow-[0_0_24px_rgba(251,191,36,0.45)]' : 'border-slate-500/70 shadow-xl'} bg-slate-950 relative">
+          <img src="${ELEM_ART[h.element]}" alt="${h.name}" class="w-full h-full object-cover" />
+          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-transparent p-1.5 text-center">
+            <div class="text-[10px] sm:text-xs font-bold text-white truncate">${h.name}</div>
+            <div class="text-[9px] text-amber-300">${'★'.repeat(inst.star)} Lv.${inst.level}</div>
+          </div>
+          ${isLead ? '<span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[9px] font-extrabold">LEAD</span>' : ''}
+        </div>
       `;
+      card.addEventListener('click', () => navigateTo('roster'));
       stageEl.appendChild(card);
     });
     const lead = HEROES.find(x => x.id === squadInsts[0].heroId);
