@@ -44,7 +44,7 @@ export const HEROES = [
 
 export function createDefaultState() {
   return {
-    tokens: { bronze: 100, silver: 3, gold: 1, platinum: 0 },
+    tokens: { bronze: 1000, silver: 500, gold: 300, platinum: 10 },
     tokenFragments: { bronze: 50, silver: 20, gold: 0 },
     heroFragments: {},
     instances: [],

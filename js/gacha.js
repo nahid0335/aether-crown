@@ -1,4 +1,4 @@
-import { TOKENS, HEROES } from './data.js';
+import { TOKENS, HEROES, HERO_SUMMON_FRAGMENT_COST } from './data.js';
 
 let uidSeq = Date.now();
 export function createInst(heroId, star = 1) {
@@ -10,20 +10,20 @@ function pickHero(rarity) {
   return p[Math.floor(Math.random() * p.length)];
 }
 
-function rollSummonStar(tokenId, luck) {
+export function rollSummonStar(rarity, luck) {
   const r = Math.random();
   const luckBoost = Math.min(0.015, (luck || 0) * 0.0003);
-  if (tokenId === 'gold' || tokenId === 'platinum') {
+  if (rarity === 'legend' || rarity === 'epic') {
     if (r < 0.004 + luckBoost) return 5;
     if (r < 0.024 + luckBoost) return 4;
-    if (r < 0.080) return 3;
-    if (r < 0.220) return 2;
+    if (r < 0.085) return 3;
+    if (r < 0.230) return 2;
     return 1;
   }
-  if (tokenId === 'silver') {
+  if (rarity === 'rare') {
     if (r < 0.003 + luckBoost * 0.5) return 4;
     if (r < 0.022) return 3;
-    if (r < 0.105) return 2;
+    if (r < 0.110) return 2;
     return 1;
   }
   if (r < 0.002) return 3;
@@ -31,6 +31,7 @@ function rollSummonStar(tokenId, luck) {
   return 1;
 }
 
+// 1 pull = 1 Character Fragment (does NOT grant the character yet)
 export function pullOnce(state, tokenId) {
   const cfg = TOKENS[tokenId];
   if (!cfg || (state.tokens[tokenId] || 0) < 1) return null;
@@ -67,11 +68,19 @@ export function pullOnce(state, tokenId) {
   }
 
   const hero = pickHero(rarity);
-  const star = rollSummonStar(tokenId, state.luck);
+  state.heroFragments[hero.id] = (state.heroFragments[hero.id] || 0) + 1;
+  return { hero, frags: 1 };
+}
+
+// 100 Hero Fragments = 1 Summon (creates a copy & rolls 1-5★)
+export function summonFromFragments(state, heroId) {
+  if ((state.heroFragments[heroId] || 0) < HERO_SUMMON_FRAGMENT_COST) return null;
+  const hero = HEROES.find(h => h.id === heroId);
+  if (!hero) return null;
+  state.heroFragments[heroId] -= HERO_SUMMON_FRAGMENT_COST;
+  const star = rollSummonStar(hero.rarity, state.luck);
   const inst = createInst(hero.id, star);
   state.instances.push(inst);
   if (state.squad.length < 3) state.squad.push(inst.uid);
-  const frags = rarity === 'legend' ? 15 : rarity === 'epic' ? 10 : rarity === 'rare' ? 6 : 4;
-  state.heroFragments[hero.id] = (state.heroFragments[hero.id] || 0) + frags;
-  return { hero, inst, frags };
+  return { hero, inst };
 }

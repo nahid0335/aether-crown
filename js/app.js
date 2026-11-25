@@ -1,5 +1,5 @@
 import { ELEM_ICON, getHeroArt, TOKENS, HEROES, createDefaultState, getMaxLv } from './data.js';
-import { createInst, pullOnce } from './gacha.js';
+import { createInst, pullOnce, summonFromFragments } from './gacha.js';
 import { getLeadBonuses, computeStats, grantExp, getElementalMultiplier } from './combat.js';
 import { initFirebaseSync } from './firebase.js';
 
@@ -75,22 +75,41 @@ function renderHUD() {
   document.getElementById('battle-stage').textContent = state.stage;
 }
 
+const TIER_INFO = {
+  bronze: { title: '🥉 Bronze Sigil', desc: 'Drops Common, Uncommon, and Rare hero fragments.' },
+  silver: { title: '🥈 Silver Relic', desc: 'Drops Rare, Epic, and Legend hero fragments.' },
+  gold: { title: '👑 Gold Crown', desc: 'Drops Epic and Legend hero fragments.' },
+  platinum: { title: '💠 Platinum Eclipse', desc: 'Forged from 100 Gold Crowns. Drops pure Legend fragments.' }
+};
+
+function showSummonedHeroModal(hero, inst) {
+  const grid = document.getElementById('pull-modal-grid');
+  grid.innerHTML = '';
+  const rc = RARITY_COLOR[hero.rarity];
+  const card = document.createElement('button');
+  card.className = `col-span-full max-w-[220px] mx-auto w-full btn-tap rounded-xl border-2 ${rc.border} ${rc.bg} p-3 flex flex-col items-center text-center gap-1.5 cursor-pointer`;
+  card.innerHTML = `
+    <div class="relative w-full aspect-square rounded-lg overflow-hidden">
+      <img src="${getHeroArt(hero.id)}" alt="${hero.name}" class="w-full h-full object-cover" />
+      <span class="absolute top-1.5 left-1.5 text-sm bg-slate-950/75 rounded-full px-1.5">${ELEM_ICON[hero.element]}</span>
+    </div>
+    <div class="text-sm font-bold ${rc.text}">${hero.name}</div>
+    <div class="text-sm text-amber-300 tracking-wider">${'★'.repeat(inst.star)}</div>
+    <div class="text-[10px] text-slate-300">Click to inspect stats &amp; skills</div>
+  `;
+  card.addEventListener('click', () => openCharDetail(hero, inst.star, inst.level));
+  grid.appendChild(card);
+  document.getElementById('pull-modal-title').textContent = '🌟 Hero Summoned!';
+  document.getElementById('pull-modal').classList.remove('hidden');
+}
+
 function renderSummon() {
-  const cfg = TOKENS[selectedTier];
-  const cyc = state.cycles[selectedTier];
   document.querySelectorAll('.tier-btn').forEach(b => {
     b.classList.toggle('border-2', b.dataset.tier === selectedTier);
-    b.classList.toggle('border-indigo-400', b.dataset.tier === selectedTier);
+    b.classList.toggle('border-amber-400', b.dataset.tier === selectedTier);
   });
-  if (selectedTier === 'platinum') {
-    document.getElementById('cycle-info').textContent = 'Crafted Token (100 Gold Crowns)';
-    document.getElementById('cycle-cap-info').textContent = '100% Guaranteed Legend';
-  } else {
-    document.getElementById('cycle-info').textContent = `Cycle: ${cyc.pulls} / ${cfg.cycleSize}`;
-    document.getElementById('cycle-cap-info').textContent = selectedTier === 'bronze'
-      ? `Uncommon: ${cyc.uncommon}/10 · Rare: ${cyc.rare}/1`
-      : `Legends this cycle: ${cyc.legend} / ${cfg.maxLegendPerCycle}`;
-  }
+  document.getElementById('channel-title').textContent = TIER_INFO[selectedTier].title;
+  document.getElementById('channel-desc').textContent = TIER_INFO[selectedTier].desc;
   document.getElementById('serial-bronze').textContent = state.tokens.bronze;
   document.getElementById('serial-silver').textContent = state.tokens.silver;
   document.getElementById('serial-gold').textContent = state.tokens.gold;
@@ -102,26 +121,25 @@ function renderSummon() {
 
   const list = document.getElementById('hero-frag-list');
   list.innerHTML = '';
-  const entries = Object.entries(state.heroFragments).filter(([, v]) => v > 0);
+  const entries = Object.entries(state.heroFragments).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
   if (!entries.length) {
-    list.innerHTML = '<div class="text-slate-500">Pull tokens to collect Monster Fragments.</div>';
+    list.innerHTML = '<div class="text-slate-500">Channel Sigils, Relics, or Crowns to collect Hero Fragments.</div>';
   } else {
     entries.forEach(([hid, cnt]) => {
       const h = HEROES.find(x => x.id === hid);
+      const rc = RARITY_COLOR[h.rarity];
       const row = document.createElement('div');
-      row.className = 'flex items-center justify-between bg-slate-900/70 rounded-lg px-2.5 py-1.5';
-      row.innerHTML = `<span>${ELEM_ICON[h.element]} ${h.name} (${cnt}/100)</span>
-        <button data-hsummon="${hid}" ${cnt >= 100 ? '' : 'disabled'} class="btn-tap px-2 py-0.5 rounded bg-emerald-600 disabled:opacity-35 text-white font-semibold">Summon</button>`;
+      row.className = `flex items-center justify-between bg-slate-900/80 border ${rc.border} rounded-lg px-2.5 py-1.5`;
+      row.innerHTML = `<div class="flex items-center gap-2"><img src="${getHeroArt(h.id)}" class="w-7 h-7 rounded object-cover" /><span class="${rc.text} font-semibold">${ELEM_ICON[h.element]} ${h.name} (${cnt}/100)</span></div>
+        <button data-hsummon="${hid}" ${cnt >= 100 ? '' : 'disabled'} class="btn-tap px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-35 text-white font-bold">Summon</button>`;
       list.appendChild(row);
     });
     list.querySelectorAll('[data-hsummon]').forEach(b => b.addEventListener('click', () => {
-      const hid = b.dataset.hsummon;
-      if ((state.heroFragments[hid] || 0) >= 100) {
-        state.heroFragments[hid] -= 100;
-        const inst = createInst(hid);
-        state.instances.push(inst);
-        if (state.squad.length < 3) state.squad.push(inst.uid);
+      const res = summonFromFragments(state, b.dataset.hsummon);
+      if (res) {
+        tone(780, 0.2, 'sine', 0.08);
         saveState(); renderAll();
+        showSummonedHeroModal(res.hero, res.inst);
       }
     }));
   }
@@ -503,41 +521,57 @@ document.querySelectorAll('.dex-filter-btn').forEach(b => b.addEventListener('cl
 }));
 document.querySelectorAll('.tier-btn').forEach(b => b.addEventListener('click', () => { selectedTier = b.dataset.tier; renderSummon(); }));
 
+const TIER_ICON = { bronze: '🥉', silver: '🥈', gold: '👑', platinum: '💠' };
+
 function handlePull(n) {
   const res = [];
   for (let i = 0; i < n; i++) { const r = pullOnce(state, selectedTier); if (!r) break; res.push(r); }
   const msg = document.getElementById('summon-msg');
-  if (!res.length) { msg.textContent = 'Not enough tokens for this tier!'; return; }
-  msg.textContent = `Summoned ${res.length}x ${TOKENS[selectedTier].name}!`;
+  if (!res.length) { msg.textContent = `Not enough ${TOKENS[selectedTier].name}s!`; return; }
+  msg.textContent = `Channeled ${res.length}× ${TOKENS[selectedTier].name} into fragments!`;
   tone(540, 0.15, 'triangle', 0.07);
   saveState(); renderAll();
 
-  const burst = document.getElementById('summon-burst');
-  burst.classList.remove('hidden', 'summon-burst-anim');
-  void burst.offsetWidth;
-  burst.classList.add('summon-burst-anim');
+  const thrown = document.getElementById('thrown-sigil');
+  thrown.textContent = TIER_ICON[selectedTier];
+  thrown.classList.remove('hidden', 'throw-pit-anim');
+  void thrown.offsetWidth;
+  thrown.classList.add('throw-pit-anim');
 
   setTimeout(() => {
-    burst.classList.add('hidden');
+    thrown.classList.add('hidden');
+    const burst = document.getElementById('summon-burst');
+    burst.classList.remove('hidden', 'summon-burst-anim');
+    void burst.offsetWidth;
+    burst.classList.add('summon-burst-anim');
+  }, 360);
+
+  setTimeout(() => {
+    document.getElementById('summon-burst').classList.add('hidden');
+    const grouped = {};
+    res.forEach(r => {
+      if (!grouped[r.hero.id]) grouped[r.hero.id] = { hero: r.hero, count: 0 };
+      grouped[r.hero.id].count += r.frags;
+    });
     const grid = document.getElementById('pull-modal-grid'); grid.innerHTML = '';
-    res.slice(0, 20).forEach(r => {
-      const rc = RARITY_COLOR[r.hero.rarity];
-      const card = document.createElement('button');
-      card.className = `btn-tap rounded-xl border-2 ${rc.border} ${rc.bg} p-2 flex flex-col items-center text-center gap-1 cursor-pointer`;
+    Object.values(grouped).forEach(g => {
+      const rc = RARITY_COLOR[g.hero.rarity];
+      const card = document.createElement('div');
+      card.className = `rounded-xl border-2 ${rc.border} ${rc.bg} p-2 flex flex-col items-center text-center gap-1 cursor-default`;
       card.innerHTML = `
         <div class="relative w-full aspect-square rounded-lg overflow-hidden">
-          <img src="${getHeroArt(r.hero.id)}" alt="${r.hero.name}" class="w-full h-full object-cover" />
-          <span class="absolute top-1 left-1 text-xs bg-slate-950/75 rounded-full px-1">${ELEM_ICON[r.hero.element]}</span>
+          <img src="${getHeroArt(g.hero.id)}" alt="${g.hero.name}" class="w-full h-full object-cover opacity-90" />
+          <span class="absolute top-1 left-1 text-xs bg-slate-950/75 rounded-full px-1">${ELEM_ICON[g.hero.element]}</span>
+          <span class="absolute bottom-1 right-1 text-[10px] font-bold bg-slate-950/85 text-emerald-300 border border-emerald-400/50 rounded px-1">🧩 +${g.count}</span>
         </div>
-        <div class="text-[11px] font-bold ${rc.text} truncate w-full">${r.hero.name}</div>
-        <div class="text-xs text-amber-300 tracking-tighter">${'★'.repeat(r.inst.star)}</div>
+        <div class="text-[11px] font-bold ${rc.text} truncate w-full">${g.hero.name}</div>
+        <div class="text-[10px] text-slate-300">Fragment (${state.heroFragments[g.hero.id] || 0}/100)</div>
       `;
-      card.addEventListener('click', () => openCharDetail(r.hero, r.inst.star, r.inst.level));
       grid.appendChild(card);
     });
-    document.getElementById('pull-modal-title').textContent = `Summoned ${res.length} Hero${res.length > 1 ? 'es' : ''} (Click any card for details)`;
+    document.getElementById('pull-modal-title').textContent = `🧩 Received ${res.length} Hero Fragment${res.length > 1 ? 's' : ''}`;
     document.getElementById('pull-modal').classList.remove('hidden');
-  }, 420);
+  }, 680);
 }
 
 document.getElementById('btn-pull-1').addEventListener('click', () => handlePull(1));
@@ -593,17 +627,21 @@ initFirebaseSync({
 
 
 document.getElementById('btn-close-char').addEventListener('click', () => document.getElementById('char-detail-modal').classList.add('hidden'));
-document.getElementById('tab-sum-pull').addEventListener('click', () => {
-  document.getElementById('panel-sum-pull').classList.remove('hidden');
-  document.getElementById('panel-sum-craft').classList.add('hidden');
-  document.getElementById('tab-sum-pull').className = 'flex-1 py-1.5 rounded-md bg-indigo-600 text-white';
-  document.getElementById('tab-sum-craft').className = 'flex-1 py-1.5 rounded-md text-slate-300';
-});
-document.getElementById('tab-sum-craft').addEventListener('click', () => {
-  document.getElementById('panel-sum-craft').classList.remove('hidden');
-  document.getElementById('panel-sum-pull').classList.add('hidden');
-  document.getElementById('tab-sum-craft').className = 'flex-1 py-1.5 rounded-md bg-indigo-600 text-white';
-  document.getElementById('tab-sum-pull').className = 'flex-1 py-1.5 rounded-md text-slate-300';
+function setSumTab(name) {
+  ['channel', 'forge', 'awaken'].forEach(t => {
+    document.getElementById(`panel-sum-${t}`).classList.toggle('hidden', t !== name);
+    document.getElementById(`tab-sum-${t}`).className = t === name ? 'py-1.5 rounded-md bg-indigo-600 text-white' : 'py-1.5 rounded-md text-slate-300';
+  });
+}
+document.getElementById('tab-sum-channel').addEventListener('click', () => setSumTab('channel'));
+document.getElementById('tab-sum-forge').addEventListener('click', () => setSumTab('forge'));
+document.getElementById('tab-sum-awaken').addEventListener('click', () => setSumTab('awaken'));
+
+document.getElementById('btn-reset-all').addEventListener('click', () => {
+  state = createDefaultState();
+  saveState();
+  renderAll();
+  document.getElementById('summon-msg').textContent = 'All test data reset!';
 });
 
 window.onload = () => renderAll();
