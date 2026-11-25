@@ -26,6 +26,39 @@ function tone(freq, dur = 0.1, type = 'sine', vol = 0.06) {
   o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
 }
 
+
+const RARITY_COLOR = {
+  common: { text: 'text-slate-300', border: 'border-slate-400/60', bg: 'bg-slate-800/80' },
+  uncommon: { text: 'text-emerald-300', border: 'border-emerald-400/70', bg: 'bg-emerald-950/40' },
+  rare: { text: 'text-sky-300', border: 'border-sky-400/80', bg: 'bg-sky-950/40' },
+  epic: { text: 'text-violet-300', border: 'border-violet-400/85', bg: 'bg-violet-950/45' },
+  legend: { text: 'text-amber-300', border: 'border-amber-400', bg: 'bg-amber-950/50' }
+};
+
+function openCharDetail(hero, star = 1, level = 1) {
+  const rc = RARITY_COLOR[hero.rarity];
+  const card = document.getElementById('char-detail-card');
+  card.className = `glass rounded-2xl max-w-md w-full p-5 flex flex-col gap-3 border-2 ${rc.border}`;
+  document.getElementById('cd-img').src = ELEM_ART[hero.element];
+  document.getElementById('cd-elem').textContent = ELEM_ICON[hero.element];
+  document.getElementById('cd-name').textContent = hero.name;
+  document.getElementById('cd-stars').textContent = '★'.repeat(star);
+  document.getElementById('cd-rarity').className = `text-[11px] font-bold uppercase tracking-wider ${rc.text}`;
+  document.getElementById('cd-rarity').textContent = `${hero.rarity} · Lv ${level}/${getMaxLv(star)}`;
+  const st = computeStats({ uid: 'preview', heroId: hero.id, star, level });
+  document.getElementById('cd-stats').innerHTML = `
+    <span>HP ${st.maxHp}</span><span>ATK ${st.atk}</span><span>DEF ${st.def}</span><span>SPD ${st.spd}</span>
+    <span>ACC ${Math.round(st.acc*100)}%</span><span>RES ${Math.round(st.res*100)}%</span><span>CR ${Math.round(st.cr*100)}%</span><span>CD ${Math.round(st.cd*100)}%</span>
+  `;
+  document.getElementById('cd-skills').innerHTML = hero.skills.map(sk => {
+    const unlocked = star >= sk.unlockStar;
+    return `<div class="rounded-lg p-2 bg-slate-900/80 border ${unlocked ? 'border-slate-700 text-slate-200' : 'border-slate-800 text-slate-500'}">
+      <div class="font-semibold">${unlocked ? '✓' : '🔒 ' + '★'.repeat(sk.unlockStar)} [${sk.type.toUpperCase()}] ${sk.name}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('char-detail-modal').classList.remove('hidden');
+}
+
 let selectedTier = 'bronze', currentTab = 'home', dexFilter = 'all', evolveTargetUid = null, evolveFodder = new Set();
 let battle = { active: false, auto: false, allies: [], enemies: [], actor: null, targetIdx: 0, type: 'boss' };
 
@@ -58,6 +91,11 @@ function renderSummon() {
       ? `Uncommon: ${cyc.uncommon}/10 · Rare: ${cyc.rare}/1`
       : `Legends this cycle: ${cyc.legend} / ${cfg.maxLegendPerCycle}`;
   }
+  document.getElementById('serial-bronze').textContent = state.tokens.bronze;
+  document.getElementById('serial-silver').textContent = state.tokens.silver;
+  document.getElementById('serial-gold').textContent = state.tokens.gold;
+  document.getElementById('serial-platinum').textContent = state.tokens.platinum;
+  document.getElementById('summon-luck-label').textContent = `${state.luck}%`;
   document.getElementById('frag-bronze').textContent = state.tokenFragments.bronze;
   document.getElementById('frag-silver').textContent = state.tokenFragments.silver;
   document.getElementById('frag-gold').textContent = state.tokenFragments.gold;
@@ -470,15 +508,36 @@ function handlePull(n) {
   for (let i = 0; i < n; i++) { const r = pullOnce(state, selectedTier); if (!r) break; res.push(r); }
   const msg = document.getElementById('summon-msg');
   if (!res.length) { msg.textContent = 'Not enough tokens for this tier!'; return; }
-  msg.textContent = `Pulled ${res.length}x ${TOKENS[selectedTier].name}!`;
-  tone(540, 0.12, 'triangle', 0.06);
+  msg.textContent = `Summoned ${res.length}x ${TOKENS[selectedTier].name}!`;
+  tone(540, 0.15, 'triangle', 0.07);
   saveState(); renderAll();
-  const grid = document.getElementById('pull-modal-grid'); grid.innerHTML = '';
-  res.slice(0, 20).forEach(r => {
-    grid.innerHTML += `<div class="rounded-xl border p-2 text-center r-${r.hero.rarity}"><div class="text-xs font-bold text-white">${ELEM_ICON[r.hero.element]} ${r.hero.name}</div><div class="text-[10px] uppercase text-amber-300">${r.hero.rarity} 1★</div><div class="text-[10px] text-slate-400">+${r.frags} Frags</div></div>`;
-  });
-  document.getElementById('pull-modal-title').textContent = `Pulled ${res.length} Monster${res.length > 1 ? 's' : ''}${res.length > 20 ? ' (showing first 20)' : ''}`;
-  document.getElementById('pull-modal').classList.remove('hidden');
+
+  const burst = document.getElementById('summon-burst');
+  burst.classList.remove('hidden', 'summon-burst-anim');
+  void burst.offsetWidth;
+  burst.classList.add('summon-burst-anim');
+
+  setTimeout(() => {
+    burst.classList.add('hidden');
+    const grid = document.getElementById('pull-modal-grid'); grid.innerHTML = '';
+    res.slice(0, 20).forEach(r => {
+      const rc = RARITY_COLOR[r.hero.rarity];
+      const card = document.createElement('button');
+      card.className = `btn-tap rounded-xl border-2 ${rc.border} ${rc.bg} p-2 flex flex-col items-center text-center gap-1 cursor-pointer`;
+      card.innerHTML = `
+        <div class="relative w-full aspect-square rounded-lg overflow-hidden">
+          <img src="${ELEM_ART[r.hero.element]}" alt="${r.hero.name}" class="w-full h-full object-cover" />
+          <span class="absolute top-1 left-1 text-xs bg-slate-950/75 rounded-full px-1">${ELEM_ICON[r.hero.element]}</span>
+        </div>
+        <div class="text-[11px] font-bold ${rc.text} truncate w-full">${r.hero.name}</div>
+        <div class="text-xs text-amber-300 tracking-tighter">${'★'.repeat(r.inst.star)}</div>
+      `;
+      card.addEventListener('click', () => openCharDetail(r.hero, r.inst.star, r.inst.level));
+      grid.appendChild(card);
+    });
+    document.getElementById('pull-modal-title').textContent = `Summoned ${res.length} Hero${res.length > 1 ? 'es' : ''} (Click any card for details)`;
+    document.getElementById('pull-modal').classList.remove('hidden');
+  }, 420);
 }
 
 document.getElementById('btn-pull-1').addEventListener('click', () => handlePull(1));
@@ -530,6 +589,21 @@ initFirebaseSync({
     try { localStorage.setItem('aether_crown_save_v1', JSON.stringify(state)); } catch (e) {}
     renderAll();
   }
+});
+
+
+document.getElementById('btn-close-char').addEventListener('click', () => document.getElementById('char-detail-modal').classList.add('hidden'));
+document.getElementById('tab-sum-pull').addEventListener('click', () => {
+  document.getElementById('panel-sum-pull').classList.remove('hidden');
+  document.getElementById('panel-sum-craft').classList.add('hidden');
+  document.getElementById('tab-sum-pull').className = 'flex-1 py-1.5 rounded-md bg-indigo-600 text-white';
+  document.getElementById('tab-sum-craft').className = 'flex-1 py-1.5 rounded-md text-slate-300';
+});
+document.getElementById('tab-sum-craft').addEventListener('click', () => {
+  document.getElementById('panel-sum-craft').classList.remove('hidden');
+  document.getElementById('panel-sum-pull').classList.add('hidden');
+  document.getElementById('tab-sum-craft').className = 'flex-1 py-1.5 rounded-md bg-indigo-600 text-white';
+  document.getElementById('tab-sum-pull').className = 'flex-1 py-1.5 rounded-md text-slate-300';
 });
 
 window.onload = () => renderAll();

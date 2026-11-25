@@ -1,13 +1,34 @@
 import { TOKENS, HEROES } from './data.js';
 
 let uidSeq = Date.now();
-export function createInst(heroId) {
-  return { uid: `m_${uidSeq++}`, heroId, star: 1, level: 1, exp: 0 };
+export function createInst(heroId, star = 1) {
+  return { uid: `m_${uidSeq++}`, heroId, star, level: 1, exp: 0 };
 }
 
 function pickHero(rarity) {
   const p = HEROES.filter(h => h.rarity === rarity);
   return p[Math.floor(Math.random() * p.length)];
+}
+
+function rollSummonStar(tokenId, luck) {
+  const r = Math.random();
+  const luckBoost = Math.min(0.015, (luck || 0) * 0.0003);
+  if (tokenId === 'gold' || tokenId === 'platinum') {
+    if (r < 0.004 + luckBoost) return 5;
+    if (r < 0.024 + luckBoost) return 4;
+    if (r < 0.080) return 3;
+    if (r < 0.220) return 2;
+    return 1;
+  }
+  if (tokenId === 'silver') {
+    if (r < 0.003 + luckBoost * 0.5) return 4;
+    if (r < 0.022) return 3;
+    if (r < 0.105) return 2;
+    return 1;
+  }
+  if (r < 0.002) return 3;
+  if (r < 0.030) return 2;
+  return 1;
 }
 
 export function pullOnce(state, tokenId) {
@@ -46,7 +67,8 @@ export function pullOnce(state, tokenId) {
   }
 
   const hero = pickHero(rarity);
-  const inst = createInst(hero.id);
+  const star = rollSummonStar(tokenId, state.luck);
+  const inst = createInst(hero.id, star);
   state.instances.push(inst);
   if (state.squad.length < 3) state.squad.push(inst.uid);
   const frags = rarity === 'legend' ? 15 : rarity === 'epic' ? 10 : rarity === 'rare' ? 6 : 4;
