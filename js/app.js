@@ -26,7 +26,7 @@ function tone(freq, dur = 0.1, type = 'sine', vol = 0.06) {
   o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur);
 }
 
-let selectedTier = 'bronze', currentTab = 'summon', dexFilter = 'all', evolveTargetUid = null, evolveFodder = new Set();
+let selectedTier = 'bronze', currentTab = 'home', dexFilter = 'all', evolveTargetUid = null, evolveFodder = new Set();
 let battle = { active: false, auto: false, allies: [], enemies: [], actor: null, targetIdx: 0, type: 'boss' };
 
 function renderHUD() {
@@ -401,14 +401,43 @@ function renderBattle() {
   }
 }
 
-function renderAll() { renderHUD(); renderSummon(); renderRoster(); renderDex(); renderRestArea(); renderBattle(); }
+
+function renderHome() {
+  document.getElementById('home-stage').textContent = state.stage;
+  document.getElementById('home-owned-badge').textContent = `${state.instances.length} Obtained →`;
+  const unlockedTypes = new Set(state.instances.map(m => m.heroId)).size;
+  document.getElementById('home-dex-badge').textContent = `${unlockedTypes}/${HEROES.length} Unlocked →`;
+  document.getElementById('home-rest-badge').textContent = `${state.restArea.length} / 5 Slots →`;
+  document.getElementById('home-battle-badge').textContent = `Stage ${state.stage} Boss & Resource →`;
+  document.getElementById('home-summon-sub').textContent = `${state.tokens.bronze} Bronze · ${state.tokens.silver} Silver · ${state.tokens.gold} Gold · ${state.tokens.platinum} Platinum`;
+
+  const squadInsts = state.squad.map(uid => state.instances.find(m => m.uid === uid)).filter(Boolean);
+  const leadEl = document.getElementById('home-lead-info');
+  if (!squadInsts.length) {
+    leadEl.textContent = 'No squad leader set yet. Summon heroes and build your 3-character squad!';
+  } else {
+    const lead = HEROES.find(h => h.id === squadInsts[0].heroId);
+    leadEl.textContent = `Squad Lead: ${ELEM_ICON[lead.element]} ${lead.name} (${squadInsts[0].star}★ Lv ${squadInsts[0].level}) · ${squadInsts.length}/3 in Squad`;
+  }
+}
+
+function navigateTo(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(x => {
+    x.className = x.dataset.tab === currentTab
+      ? 'tab-btn flex-1 min-w-[90px] py-2 rounded-lg text-xs sm:text-sm font-semibold bg-indigo-600 text-white'
+      : 'tab-btn flex-1 min-w-[90px] py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-300';
+  });
+  ['home', 'summon', 'roster', 'dex', 'rest', 'battle'].forEach(t => {
+    document.getElementById(`view-${t}`).classList.toggle('hidden', t !== currentTab);
+  });
+}
+
+function renderAll() { renderHUD(); renderHome(); renderSummon(); renderRoster(); renderDex(); renderRestArea(); renderBattle(); }
 
 // Wire events
-document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
-  currentTab = b.dataset.tab;
-  document.querySelectorAll('.tab-btn').forEach(x => x.className = x.dataset.tab === currentTab ? 'tab-btn flex-1 min-w-[110px] py-2 rounded-lg text-xs sm:text-sm font-semibold bg-indigo-600 text-white' : 'tab-btn flex-1 min-w-[110px] py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-300');
-  ['summon', 'roster', 'dex', 'rest', 'battle'].forEach(t => document.getElementById(`view-${t}`).classList.toggle('hidden', t !== currentTab));
-}));
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => navigateTo(b.dataset.tab)));
+document.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => navigateTo(b.dataset.nav)));
 document.querySelectorAll('.dex-filter-btn').forEach(b => b.addEventListener('click', () => {
   dexFilter = b.dataset.dexFilter;
   document.querySelectorAll('.dex-filter-btn').forEach(x => x.classList.remove('bg-indigo-600', 'text-white'));
