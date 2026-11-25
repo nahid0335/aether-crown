@@ -403,31 +403,46 @@ function renderBattle() {
 
 
 function renderHome() {
-  document.getElementById('home-stage').textContent = state.stage;
-  document.getElementById('home-owned-badge').textContent = `${state.instances.length} Obtained →`;
-  const unlockedTypes = new Set(state.instances.map(m => m.heroId)).size;
-  document.getElementById('home-dex-badge').textContent = `${unlockedTypes}/${HEROES.length} Unlocked →`;
-  document.getElementById('home-rest-badge').textContent = `${state.restArea.length} / 5 Slots →`;
-  document.getElementById('home-battle-badge').textContent = `Stage ${state.stage} Boss & Resource →`;
-  document.getElementById('home-summon-sub').textContent = `${state.tokens.bronze} Bronze · ${state.tokens.silver} Silver · ${state.tokens.gold} Gold · ${state.tokens.platinum} Platinum`;
+  const stageEl = document.getElementById('lobby-squad-stage');
+  const titleEl = document.getElementById('home-lead-title');
+  const infoEl = document.getElementById('home-lead-info');
+  const dockBadge = document.getElementById('dock-tokens-badge');
+  dockBadge.textContent = `${state.tokens.bronze + state.tokens.silver + state.tokens.gold + state.tokens.platinum} Tokens`;
 
   const squadInsts = state.squad.map(uid => state.instances.find(m => m.uid === uid)).filter(Boolean);
-  const leadEl = document.getElementById('home-lead-info');
+  stageEl.innerHTML = '';
+
   if (!squadInsts.length) {
-    leadEl.textContent = 'No squad leader set yet. Summon heroes and build your 3-character squad!';
+    stageEl.innerHTML = `<button data-nav-dyn="summon" class="float-hero glass rounded-3xl p-6 border-2 border-amber-400/50 flex flex-col items-center gap-2 shadow-2xl">
+      <span class="text-5xl">👑</span>
+      <span class="font-rpg text-xs font-bold text-amber-300 uppercase tracking-widest">Astral Altar</span>
+    </button>`;
+    stageEl.querySelector('[data-nav-dyn]').addEventListener('click', () => navigateTo('summon'));
+    titleEl.textContent = 'Summon Your First Hero';
+    infoEl.textContent = 'Tap Summon below to pull Bronze, Silver, or Gold Crown tokens.';
   } else {
-    const lead = HEROES.find(h => h.id === squadInsts[0].heroId);
-    leadEl.textContent = `Squad Lead: ${ELEM_ICON[lead.element]} ${lead.name} (${squadInsts[0].star}★ Lv ${squadInsts[0].level}) · ${squadInsts.length}/3 in Squad`;
+    squadInsts.forEach((inst, i) => {
+      const h = HEROES.find(x => x.id === inst.heroId);
+      const isLead = i === 0;
+      const card = document.createElement('div');
+      card.className = `float-hero glass rounded-2xl border p-3 sm:p-4 flex flex-col items-center gap-1 r-${h.rarity} ${isLead ? 'scale-110 z-10 shadow-2xl' : 'opacity-90 scale-95'}`;
+      card.style.animationDelay = `${i * 0.45}s`;
+      card.innerHTML = `
+        <span class="text-[10px] font-bold uppercase ${isLead ? 'text-amber-300' : 'text-slate-400'}">${isLead ? '★ Lead' : 'Ally'}</span>
+        <span class="text-3xl sm:text-4xl my-1">${ELEM_ICON[h.element]}</span>
+        <span class="text-xs font-bold text-white whitespace-nowrap">${h.name}</span>
+        <span class="text-[10px] text-amber-300">${'★'.repeat(inst.star)} Lv.${inst.level}</span>
+      `;
+      stageEl.appendChild(card);
+    });
+    const lead = HEROES.find(x => x.id === squadInsts[0].heroId);
+    titleEl.textContent = `${lead.name} — Ready for Stage ${state.stage}`;
+    infoEl.textContent = `${squadInsts.length}/3 Heroes Deployed · Tap Battle to fight or My Heroes to evolve`;
   }
 }
 
 function navigateTo(tab) {
   currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(x => {
-    x.className = x.dataset.tab === currentTab
-      ? 'tab-btn flex-1 min-w-[90px] py-2 rounded-lg text-xs sm:text-sm font-semibold bg-indigo-600 text-white'
-      : 'tab-btn flex-1 min-w-[90px] py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-300';
-  });
   ['home', 'summon', 'roster', 'dex', 'rest', 'battle'].forEach(t => {
     document.getElementById(`view-${t}`).classList.toggle('hidden', t !== currentTab);
   });
@@ -436,7 +451,6 @@ function navigateTo(tab) {
 function renderAll() { renderHUD(); renderHome(); renderSummon(); renderRoster(); renderDex(); renderRestArea(); renderBattle(); }
 
 // Wire events
-document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => navigateTo(b.dataset.tab)));
 document.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => navigateTo(b.dataset.nav)));
 document.querySelectorAll('.dex-filter-btn').forEach(b => b.addEventListener('click', () => {
   dexFilter = b.dataset.dexFilter;

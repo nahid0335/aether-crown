@@ -6,33 +6,55 @@
   <title>Aether Crown — Turn-Based Gacha RPG</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    body { font-family: 'Inter', system-ui, sans-serif; background: radial-gradient(circle at 50% 0%, #171c36 0%, #090c17 65%, #04060c 100%); color: #e2e8f0; min-height: 100vh; margin: 0; }
-    .glass { background: rgba(15, 23, 42, 0.80); backdrop-filter: blur(12px); border: 1px solid rgba(148, 163, 184, 0.16); }
-    .btn-tap { transition: transform 0.12s ease, border-color 0.15s ease; }
-    .btn-tap:active { transform: scale(0.97); }
-    .hub-card { transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease; }
-    .hub-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.25); }
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', system-ui, sans-serif; background: #04060c; color: #e2e8f0; margin: 0; overflow: hidden; height: 100vh; width: 100vw; }
+    .font-rpg { font-family: 'Cinzel', Georgia, serif; }
+    .glass { background: rgba(10, 15, 30, 0.84); backdrop-filter: blur(14px); border: 1px solid rgba(148, 163, 184, 0.2); }
+    .game-pill { background: rgba(8, 12, 24, 0.78); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.14); }
+    .btn-tap { transition: transform 0.12s ease, filter 0.15s ease; }
+    .btn-tap:hover { filter: brightness(1.12); }
+    .btn-tap:active { transform: scale(0.95); }
+    .rpg-dock-btn {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .rpg-dock-btn:hover { transform: translateY(-3px); border-color: rgba(251, 191, 36, 0.65); }
+    .rpg-battle-btn {
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 55%, #dc2626 100%);
+      border: 2px solid rgba(254, 240, 138, 0.65);
+      box-shadow: 0 0 28px rgba(245, 158, 11, 0.42);
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .float-hero { animation: floatSlow 3.6s ease-in-out infinite; }
     .r-common { border-color: rgba(148,163,184,0.35); }
     .r-uncommon { border-color: rgba(52,211,153,0.45); }
     .r-rare { border-color: rgba(56,189,248,0.55); }
-    .r-epic { border-color: rgba(167,139,250,0.65); background: linear-gradient(145deg, rgba(76,29,149,0.28), rgba(15,23,42,0.85)); }
-    .r-legend { border-color: rgba(251,191,36,0.75); background: linear-gradient(145deg, rgba(120,53,15,0.38), rgba(30,27,75,0.85)); }
+    .r-epic { border-color: rgba(167,139,250,0.65); background: linear-gradient(145deg, rgba(76,29,149,0.34), rgba(15,23,42,0.88)); }
+    .r-legend { border-color: rgba(251,191,36,0.8); background: linear-gradient(145deg, rgba(120,53,15,0.45), rgba(30,27,75,0.88)); }
   </style>
 </head>
-<body class="p-3 sm:p-5 flex flex-col items-center">
-  <!-- Login First Gate with Banner -->
-  <div id="login-gate" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-4 cursor-pointer overflow-hidden">
+<body class="relative select-none">
+  <!-- Ambient Game World Backdrop -->
+  <img src="assets/banner.jpg" alt="Aether Crown World" class="fixed inset-0 w-full h-full object-cover z-0" />
+  <div class="fixed inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-slate-950/75 z-0"></div>
+
+  <!-- LOGIN FIRST GATE (Title Screen) -->
+  <div id="login-gate" class="fixed inset-0 z-50 bg-slate-950/30 flex flex-col items-center justify-center p-4 cursor-pointer overflow-hidden">
     <img src="assets/banner.jpg" alt="Aether Crown Banner" class="absolute inset-0 w-full h-full object-cover" />
-    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/35"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-slate-950/30"></div>
     <div id="splash-prompt" class="relative z-10 flex flex-col items-center text-center gap-4 max-w-lg px-4 mt-auto mb-10 sm:mb-14">
       <span class="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest bg-amber-500/20 text-amber-300 border border-amber-400/40 backdrop-blur-md">Turn-Based Elemental Gacha RPG</span>
-      <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">AETHER CROWN</h2>
+      <h2 class="font-rpg text-4xl sm:text-5xl font-extrabold tracking-wider text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]">AETHER CROWN</h2>
       <p class="text-xs sm:text-sm text-slate-200/90 drop-shadow">Summon elemental heroes, master Stamina turn order, and forge the Platinum Eclipse.</p>
-      <div class="mt-2 px-6 py-2.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 backdrop-blur-md text-sm font-bold text-white tracking-wide animate-pulse shadow-lg">✦ Click Anywhere to Enter ✦</div>
+      <div class="mt-2 px-7 py-2.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/35 backdrop-blur-md text-sm font-bold text-white tracking-wider animate-pulse shadow-lg">✦ Click Anywhere to Enter ✦</div>
     </div>
-    <div id="auth-card" class="hidden relative z-10 glass rounded-2xl max-w-sm w-full p-6 flex flex-col gap-3.5 shadow-2xl border border-amber-400/30 cursor-default">
-      <div class="text-center"><div class="text-2xl mb-1">👑</div><h3 class="text-lg font-bold text-white">Welcome to Aether Crown</h3><p class="text-[11px] text-slate-300">Sign in or create an account to sync your save anywhere</p></div>
+    <div id="auth-card" class="hidden relative z-10 glass rounded-2xl max-w-sm w-full p-6 flex flex-col gap-3.5 shadow-2xl border border-amber-400/35 cursor-default">
+      <div class="text-center"><div class="text-2xl mb-1">👑</div><h3 class="font-rpg text-lg font-bold text-white">Aether Crown</h3><p class="text-[11px] text-slate-300">Sign in or create an account to sync your save anywhere</p></div>
       <div class="flex rounded-lg bg-slate-900/80 p-1 text-xs font-semibold"><button id="tab-auth-signin" class="flex-1 py-1.5 rounded-md bg-indigo-600 text-white">Sign In</button><button id="tab-auth-signup" class="flex-1 py-1.5 rounded-md text-slate-300">Sign Up</button></div>
       <div class="flex flex-col gap-2">
         <input id="auth-email" type="email" placeholder="Email address" class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400" />
@@ -46,126 +68,93 @@
     </div>
   </div>
 
-  <div class="w-full max-w-5xl flex flex-col gap-3">
-    <!-- Persistent Top HUD -->
-    <header class="glass rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2.5">
-        <button data-nav="home" class="btn-tap w-9 h-9 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/35 border border-indigo-400/40 flex items-center justify-center text-lg" title="Back to Home">👑</button>
-        <div>
-          <h1 class="text-base sm:text-lg font-bold text-white leading-tight">Aether Crown</h1>
-          <p class="text-[11px] text-slate-400">Stamina-Turn Gacha RPG · Fire &gt; Grass &gt; Water</p>
+  <!-- GAME CLIENT SHELL (Full Viewport, No Webpage Scroll) -->
+  <div class="relative z-10 w-full h-full flex flex-col justify-between p-3 sm:p-5 max-w-6xl mx-auto">
+    <!-- Top Floating Game HUD -->
+    <header class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <button data-nav="home" class="game-pill btn-tap px-3 py-1.5 rounded-full flex items-center gap-2">
+          <span class="text-base">👑</span>
+          <span class="font-rpg text-xs sm:text-sm font-bold text-amber-200 tracking-wide">Aether Crown</span>
+        </button>
+        <div class="game-pill px-2.5 py-1.5 rounded-full flex items-center gap-2 text-[11px]">
+          <span id="cloud-status" class="text-emerald-300 font-medium">Local only</span>
+          <button id="btn-auth" class="text-indigo-300 hover:text-white font-semibold underline">Sign In</button>
         </div>
       </div>
+
       <div class="flex flex-wrap items-center gap-1.5 text-xs">
-        <span class="px-2.5 py-1 rounded-lg bg-amber-900/30 border border-amber-700/50 text-amber-200 font-semibold">🥉 <span id="hud-bronze">0</span></span>
-        <span class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 font-semibold">🥈 <span id="hud-silver">0</span></span>
-        <span class="px-2.5 py-1 rounded-lg bg-yellow-900/30 border border-yellow-600/60 text-yellow-300 font-semibold">👑 <span id="hud-gold">0</span></span>
-        <span class="px-2.5 py-1 rounded-lg bg-indigo-900/40 border border-indigo-400/60 text-indigo-200 font-semibold">💠 <span id="hud-platinum">0</span></span>
-        <span class="px-2.5 py-1 rounded-lg bg-emerald-900/30 border border-emerald-500/40 text-emerald-300 font-semibold">🍀 <span id="hud-luck">0%</span></span>
-        <button id="btn-auth" class="btn-tap px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">☁️ Sign In</button>
-        <span id="cloud-status" class="text-[11px] text-slate-400">Local only</span>
-        <button id="btn-mute" class="btn-tap px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-600 text-slate-200">🔊</button>
+        <span class="game-pill px-2.5 py-1 rounded-full text-amber-200 font-semibold">🥉 <span id="hud-bronze">0</span></span>
+        <span class="game-pill px-2.5 py-1 rounded-full text-slate-200 font-semibold">🥈 <span id="hud-silver">0</span></span>
+        <span class="game-pill px-2.5 py-1 rounded-full text-yellow-300 font-semibold">👑 <span id="hud-gold">0</span></span>
+        <span class="game-pill px-2.5 py-1 rounded-full text-indigo-200 font-semibold">💠 <span id="hud-platinum">0</span></span>
+        <span class="game-pill px-2.5 py-1 rounded-full text-emerald-300 font-semibold">🍀 <span id="hud-luck">0%</span></span>
+        <button id="btn-mute" class="game-pill btn-tap px-2.5 py-1 rounded-full text-slate-200">🔊</button>
       </div>
     </header>
 
-    <!-- Top Navigation Bar -->
-    <nav class="glass rounded-xl p-1 flex flex-wrap gap-1">
-      <button data-tab="home" class="tab-btn flex-1 min-w-[90px] py-2 rounded-lg text-xs sm:text-sm font-semibold bg-indigo-600 text-white">🏠 Home</button>
-      <button data-tab="summon" class="tab-btn flex-1 min-w-[95px] py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-300">✦ Summon</button>
-      <button data-tab="roster" class="tab-btn flex-1 min-w-[115px] py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-300">⚔ My Characters (<span id="nav-roster">0</span>)</button>
-      <button data-tab="dex" class="tab-btn flex-1 min-w-[115px] py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-300">📖 All Characters (<span id="nav-dex">13</span>)</button>
-      <button data-tab="rest" class="tab-btn flex-1 min-w-[95px] py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-300">🏕 Rest (<span id="nav-rest">0</span>/5)</button>
-      <button data-tab="battle" class="tab-btn flex-1 min-w-[95px] py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-300">⚡ Battle (S<span id="nav-stage">1</span>)</button>
-    </nav>
-
-    <!-- HOME HUB -->
-    <section id="view-home" class="flex flex-col gap-3">
-      <!-- Hero Lobby Banner -->
-      <div class="glass rounded-2xl overflow-hidden relative min-h-[190px] sm:min-h-[220px] flex flex-col justify-end p-5 border border-amber-400/25">
-        <img src="assets/banner.jpg" alt="Lobby Banner" class="absolute inset-0 w-full h-full object-cover opacity-55" />
-        <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/75 to-slate-950/40"></div>
-        <div class="relative z-10 flex flex-wrap items-end justify-between gap-4">
-          <div class="max-w-lg">
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-400/40">Command Center</span>
-            <h2 class="text-xl sm:text-2xl font-extrabold text-white mt-1.5">Ready for Stage <span id="home-stage">1</span></h2>
-            <p id="home-lead-info" class="text-xs sm:text-sm text-slate-300 mt-1">No squad leader set yet. Summon heroes and build your 3-character squad!</p>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <button data-nav="summon" class="btn-tap px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs sm:text-sm font-bold text-white shadow-lg shadow-amber-500/20">✦ Summon Now</button>
-            <button data-nav="battle" class="btn-tap px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs sm:text-sm font-bold text-white shadow-lg shadow-indigo-500/25">⚡ Enter Battle →</button>
-          </div>
+    <!-- LOBBY CENTERPIECE (VIEW: HOME) -->
+    <main id="view-home" class="flex-1 flex flex-col justify-between py-2 sm:py-4">
+      <!-- Center Squad Stage -->
+      <div class="flex-1 flex flex-col items-center justify-center text-center gap-3">
+        <div id="lobby-squad-stage" class="flex items-end justify-center gap-3 sm:gap-6"></div>
+        <div class="game-pill px-4 py-2 rounded-2xl max-w-md">
+          <div id="home-lead-title" class="font-rpg text-sm sm:text-base font-bold text-amber-200">Summon Your First Hero</div>
+          <div id="home-lead-info" class="text-[11px] sm:text-xs text-slate-300 mt-0.5">Tap Summon below to pull Bronze, Silver, or Gold Crown tokens.</div>
         </div>
       </div>
 
-      <!-- 5 Quick-Access Hub Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <button data-nav="summon" class="hub-card glass rounded-2xl p-4 text-left border border-amber-500/35 hover:border-amber-400 flex flex-col justify-between gap-3">
-          <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-xl">✦</span>
-            <span class="text-[11px] font-semibold text-amber-300">Gacha &amp; Forge →</span>
-          </div>
-          <div>
-            <h3 class="text-sm sm:text-base font-bold text-white">Summon &amp; Craft</h3>
-            <p id="home-summon-sub" class="text-xs text-slate-400 mt-0.5">Pull Bronze, Silver, Gold &amp; Platinum tokens</p>
-          </div>
-        </button>
+      <!-- Bottom RPG Action Dock -->
+      <div class="flex flex-wrap items-end justify-between gap-3 pt-2">
+        <!-- Left Menu Icons -->
+        <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          <button data-nav="summon" class="rpg-dock-btn rounded-2xl px-3.5 py-2.5 flex flex-col items-center min-w-[78px] relative">
+            <span class="text-xl">✦</span>
+            <span class="text-[11px] font-bold text-amber-200 mt-0.5">Summon</span>
+            <span id="dock-tokens-badge" class="text-[9px] text-slate-400">Gacha</span>
+          </button>
+          <button data-nav="roster" class="rpg-dock-btn rounded-2xl px-3.5 py-2.5 flex flex-col items-center min-w-[78px] relative">
+            <span class="text-xl">⚔</span>
+            <span class="text-[11px] font-bold text-white mt-0.5">My Heroes</span>
+            <span id="nav-roster" class="text-[9px] text-emerald-300 font-semibold">0</span>
+          </button>
+          <button data-nav="dex" class="rpg-dock-btn rounded-2xl px-3.5 py-2.5 flex flex-col items-center min-w-[78px]">
+            <span class="text-xl">📖</span>
+            <span class="text-[11px] font-bold text-white mt-0.5">Codex</span>
+            <span id="nav-dex" class="text-[9px] text-sky-300 font-semibold">13</span>
+          </button>
+          <button data-nav="rest" class="rpg-dock-btn rounded-2xl px-3.5 py-2.5 flex flex-col items-center min-w-[78px]">
+            <span class="text-xl">🏕</span>
+            <span class="text-[11px] font-bold text-white mt-0.5">Rest Area</span>
+            <span class="text-[9px] text-violet-300 font-semibold"><span id="nav-rest">0</span>/5</span>
+          </button>
+        </div>
 
-        <button data-nav="roster" class="hub-card glass rounded-2xl p-4 text-left border border-emerald-500/35 hover:border-emerald-400 flex flex-col justify-between gap-3">
-          <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-xl">⚔</span>
-            <span id="home-owned-badge" class="text-[11px] font-semibold text-emerald-300">0 Obtained →</span>
-          </div>
-          <div>
-            <h3 class="text-sm sm:text-base font-bold text-white">My Characters</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Review obtained heroes, set Lead &amp; Evolve 1★–6★</p>
-          </div>
-        </button>
-
-        <button data-nav="dex" class="hub-card glass rounded-2xl p-4 text-left border border-sky-500/35 hover:border-sky-400 flex flex-col justify-between gap-3">
-          <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-xl">📖</span>
-            <span id="home-dex-badge" class="text-[11px] font-semibold text-sky-300">13 Total →</span>
-          </div>
-          <div>
-            <h3 class="text-sm sm:text-base font-bold text-white">All Characters</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Browse every hero, 8 stats, skills &amp; 100-frag summon</p>
-          </div>
-        </button>
-
-        <button data-nav="rest" class="hub-card glass rounded-2xl p-4 text-left border border-violet-500/35 hover:border-violet-400 flex flex-col justify-between gap-3">
-          <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-400/40 flex items-center justify-center text-xl">🏕</span>
-            <span id="home-rest-badge" class="text-[11px] font-semibold text-violet-300">0 / 5 Slots →</span>
-          </div>
-          <div>
-            <h3 class="text-sm sm:text-base font-bold text-white">Rest Area</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Assign up to 5 monsters for passive battle EXP</p>
-          </div>
-        </button>
-
-        <button data-nav="battle" class="hub-card glass rounded-2xl p-4 text-left border border-rose-500/35 hover:border-rose-400 flex flex-col justify-between gap-3 sm:col-span-2 lg:col-span-2">
-          <div class="flex items-center justify-between">
-            <span class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-xl">⚡</span>
-            <span id="home-battle-badge" class="text-[11px] font-semibold text-rose-300">Stage 1 Boss &amp; Resource →</span>
-          </div>
-          <div>
-            <h3 class="text-sm sm:text-base font-bold text-white">Battle Arena</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Fight Bosses for Token Fragments &amp; rare Luck, or clear Resource stages for fast EXP.</p>
+        <!-- Right Primary Battle CTA -->
+        <button data-nav="battle" class="rpg-battle-btn btn-tap rounded-2xl px-6 py-3.5 flex items-center gap-3 ml-auto">
+          <span class="text-2xl">⚡</span>
+          <div class="text-left">
+            <div class="font-rpg text-sm sm:text-base font-extrabold text-white tracking-wider leading-none">BATTLE</div>
+            <div class="text-[11px] text-amber-100 font-semibold mt-1">Stage <span id="nav-stage">1</span> · Boss &amp; EXP</div>
           </div>
         </button>
       </div>
-    </section>
+    </main>
 
+    <!-- SUB-SCREEN OVERLAYS (Summon, My Heroes, Codex, Rest, Battle) -->
     <!-- SUMMON -->
-    <section id="view-summon" class="hidden flex flex-col gap-3">
-      <div class="flex items-center justify-between"><h2 class="text-sm font-bold text-white">✦ Summon &amp; Fragment Workshop</h2><button data-nav="home" class="btn-tap px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300">← Home</button></div>
+    <section id="view-summon" class="hidden flex-1 glass rounded-2xl p-4 sm:p-5 flex flex-col gap-3 overflow-y-auto my-2">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+        <h2 class="font-rpg text-base sm:text-lg font-bold text-amber-200">✦ Summon Altar &amp; Forge</h2>
+        <button data-nav="home" class="btn-tap px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white">✕ Lobby</button>
+      </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <button data-tier="bronze" class="tier-btn btn-tap glass rounded-xl p-3 text-left border-2 border-amber-500/70"><div class="text-xs font-bold text-amber-300">🥉 Bronze Sigil</div><div class="text-[11px] text-slate-400 mt-0.5">C / U / R · 100-pull R</div></button>
         <button data-tier="silver" class="tier-btn btn-tap glass rounded-xl p-3 text-left border border-slate-700"><div class="text-xs font-bold text-slate-200">🥈 Silver Relic</div><div class="text-[11px] text-slate-400 mt-0.5">R / E / L · 200-pull L (max 4)</div></button>
         <button data-tier="gold" class="tier-btn btn-tap glass rounded-xl p-3 text-left border border-slate-700"><div class="text-xs font-bold text-yellow-300">👑 Gold Crown</div><div class="text-[11px] text-slate-400 mt-0.5">E / L · 100-pull L (max 10)</div></button>
         <button data-tier="platinum" class="tier-btn btn-tap glass rounded-xl p-3 text-left border border-slate-700"><div class="text-xs font-bold text-indigo-300">💠 Platinum Eclipse</div><div class="text-[11px] text-slate-400 mt-0.5">100% Legend (Craft Only)</div></button>
       </div>
-      <div class="glass rounded-2xl p-4 flex flex-col items-center gap-3 text-center">
+      <div class="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 flex flex-col items-center gap-3 text-center">
         <div class="w-full flex flex-wrap justify-between text-xs text-slate-300"><span id="cycle-info">Cycle: 0 / 100</span><span id="cycle-cap-info">Guarantee: 10 Uncommon, 1 Rare</span></div>
         <div class="flex flex-wrap justify-center gap-2.5">
           <button id="btn-pull-1" class="btn-tap px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs sm:text-sm font-semibold text-white">Pull ×1</button>
@@ -175,7 +164,7 @@
         <p id="summon-msg" class="text-xs text-amber-300 h-4"></p>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="glass rounded-2xl p-4 flex flex-col gap-2.5">
+        <div class="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 flex flex-col gap-2.5">
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Token Fragments (100 = 1 Token) &amp; 100× Upgrade</h3>
           <div class="space-y-2 text-xs">
             <div class="flex items-center justify-between bg-slate-900/70 rounded-lg p-2"><span>🥉 Bronze Frags: <strong id="frag-bronze">0</strong>/100</span><div class="flex gap-1.5"><button id="craft-bronze" class="btn-tap px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white">100 Frags → 1</button><button id="up-bronze" class="btn-tap px-2 py-1 rounded bg-sky-700 hover:bg-sky-600 text-white">100 🥉 → 1 🥈</button></div></div>
@@ -183,61 +172,69 @@
             <div class="flex items-center justify-between bg-slate-900/70 rounded-lg p-2"><span>👑 Gold Frags: <strong id="frag-gold">0</strong>/100</span><div class="flex gap-1.5"><button id="craft-gold" class="btn-tap px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white">100 Frags → 1</button><button id="up-gold" class="btn-tap px-2 py-1 rounded bg-indigo-700 hover:bg-indigo-600 text-white">100 👑 → 1 💠</button></div></div>
           </div>
         </div>
-        <div class="glass rounded-2xl p-4 flex flex-col gap-2"><h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Monster Fragments (100 = Direct Summon)</h3><div id="hero-frag-list" class="max-h-44 overflow-y-auto space-y-1.5 text-xs"></div></div>
+        <div class="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 flex flex-col gap-2"><h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Monster Fragments (100 = Direct Summon)</h3><div id="hero-frag-list" class="max-h-44 overflow-y-auto space-y-1.5 text-xs"></div></div>
       </div>
     </section>
 
     <!-- MY CHARACTERS -->
-    <section id="view-roster" class="hidden flex flex-col gap-3">
-      <div class="flex items-center justify-between"><h2 class="text-sm font-bold text-white">⚔ My Obtained Characters</h2><button data-nav="home" class="btn-tap px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300">← Home</button></div>
-      <div class="glass rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs"><span>Squad (Slot 1 = Lead Skill for Epic/Legend): <strong id="squad-names" class="text-emerald-300">None</strong></span><span class="text-slate-400">Evolve at Max Lv (10×Star) using (Star+1) same-star fodder</span></div>
+    <section id="view-roster" class="hidden flex-1 glass rounded-2xl p-4 sm:p-5 flex flex-col gap-3 overflow-y-auto my-2">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+        <h2 class="font-rpg text-base sm:text-lg font-bold text-emerald-300">⚔ My Obtained Heroes</h2>
+        <button data-nav="home" class="btn-tap px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white">✕ Lobby</button>
+      </div>
+      <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3 flex flex-wrap items-center justify-between gap-2 text-xs"><span>Squad (Slot 1 = Lead Skill for Epic/Legend): <strong id="squad-names" class="text-emerald-300">None</strong></span><span class="text-slate-400">Evolve at Max Lv (10×Star) using (Star+1) same-star fodder</span></div>
       <div id="roster-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
     </section>
 
-    <!-- ALL CHARACTERS -->
-    <section id="view-dex" class="hidden flex flex-col gap-3">
-      <div class="flex items-center justify-between"><h2 class="text-sm font-bold text-white">📖 All Characters (Codex)</h2><button data-nav="home" class="btn-tap px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300">← Home</button></div>
-      <div class="glass rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+    <!-- ALL CHARACTERS (CODEX) -->
+    <section id="view-dex" class="hidden flex-1 glass rounded-2xl p-4 sm:p-5 flex flex-col gap-3 overflow-y-auto my-2">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+        <h2 class="font-rpg text-base sm:text-lg font-bold text-sky-300">📖 Character Codex</h2>
+        <button data-nav="home" class="btn-tap px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white">✕ Lobby</button>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
         <div class="flex flex-wrap gap-1.5"><button data-dex-filter="all" class="dex-filter-btn px-2.5 py-1 rounded-lg font-semibold bg-indigo-600 text-white">All</button><button data-dex-filter="fire" class="dex-filter-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-800 text-rose-300">🔥 Fire</button><button data-dex-filter="grass" class="dex-filter-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-800 text-emerald-300">🌿 Grass</button><button data-dex-filter="water" class="dex-filter-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-800 text-sky-300">💧 Water</button></div>
-        <span class="text-slate-400">Fragments alone cannot battle — summon at 100/100 fragments</span>
+        <span class="text-slate-400">Fragments alone cannot battle — summon at 100/100</span>
       </div>
       <div id="dex-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
     </section>
 
     <!-- REST AREA -->
-    <section id="view-rest" class="hidden flex flex-col gap-3">
-      <div class="flex items-center justify-between"><h2 class="text-sm font-bold text-white">🏕 Rest Area</h2><button data-nav="home" class="btn-tap px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300">← Home</button></div>
-      <div class="glass rounded-2xl p-4 flex flex-col gap-3">
-        <div class="flex items-center justify-between"><div><p class="text-xs text-slate-400">Assign up to 5 monsters to gain 50% passive EXP whenever you clear a Boss or Resource stage.</p></div><span id="rest-count-badge" class="text-xs font-bold text-emerald-300">0 / 5</span></div>
-        <div id="rest-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2"></div>
+    <section id="view-rest" class="hidden flex-1 glass rounded-2xl p-4 sm:p-5 flex flex-col gap-3 overflow-y-auto my-2">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+        <h2 class="font-rpg text-base sm:text-lg font-bold text-violet-300">🏕 Sanctuary Rest Area</h2>
+        <button data-nav="home" class="btn-tap px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white">✕ Lobby</button>
       </div>
+      <div class="flex items-center justify-between text-xs"><p class="text-slate-400">Assign up to 5 monsters to gain 50% passive EXP whenever you clear a Boss or Resource stage.</p><span id="rest-count-badge" class="font-bold text-emerald-300">0 / 5</span></div>
+      <div id="rest-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2"></div>
     </section>
 
     <!-- BATTLE -->
-    <section id="view-battle" class="hidden flex flex-col gap-3">
-      <div class="flex items-center justify-between"><h2 class="text-sm font-bold text-white">⚡ Stage <span id="battle-stage">1</span> Arena</h2><button data-nav="home" class="btn-tap px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300">← Home</button></div>
-      <div class="glass rounded-2xl p-4 flex flex-col gap-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <p class="text-xs text-slate-400">Stamina (0–100) fills by SPD · Boss drops Token Frags &amp; rare Luck</p>
-          <div class="flex flex-wrap gap-2"><button id="btn-start-res" class="btn-tap px-3 py-1.5 rounded-lg bg-sky-700 hover:bg-sky-600 text-xs font-semibold text-white">Resource Stage (EXP)</button><button id="btn-start-boss" class="btn-tap px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white">Boss Stage (Frags + EXP)</button><button id="btn-auto" class="btn-tap px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-xs font-semibold text-slate-300">Auto: OFF</button></div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3 space-y-2"><div class="text-[11px] font-bold uppercase text-sky-300">Your Squad (Stamina Turn Order)</div><div id="arena-allies" class="space-y-2"></div></div>
-          <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3 space-y-2"><div class="text-[11px] font-bold uppercase text-rose-400">Enemies (Click to Target)</div><div id="arena-enemies" class="space-y-2"></div></div>
-        </div>
-        <div id="skill-bar" class="rounded-xl bg-slate-900/90 border border-indigo-500/30 p-3 flex flex-wrap items-center justify-between gap-2"><span id="turn-actor-label" class="text-xs font-semibold text-indigo-300">Start a Boss or Resource battle above.</span><div id="skill-buttons" class="flex flex-wrap gap-2"></div></div>
-        <div id="battle-log" class="rounded-xl bg-slate-950/80 border border-slate-800 p-3 h-28 overflow-y-auto text-xs text-slate-300 space-y-1"></div>
+    <section id="view-battle" class="hidden flex-1 glass rounded-2xl p-4 sm:p-5 flex flex-col gap-3 overflow-y-auto my-2">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-2.5">
+        <h2 class="font-rpg text-base sm:text-lg font-bold text-amber-300">⚡ Stage <span id="battle-stage">1</span> Arena</h2>
+        <button data-nav="home" class="btn-tap px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-white">✕ Lobby</button>
       </div>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="text-xs text-slate-400">Stamina (0–100) fills by SPD · Boss drops Token Frags &amp; rare Luck</p>
+        <div class="flex flex-wrap gap-2"><button id="btn-start-res" class="btn-tap px-3 py-1.5 rounded-lg bg-sky-700 hover:bg-sky-600 text-xs font-semibold text-white">Resource Stage (EXP)</button><button id="btn-start-boss" class="btn-tap px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white">Boss Stage (Frags + EXP)</button><button id="btn-auto" class="btn-tap px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-xs font-semibold text-slate-300">Auto: OFF</button></div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3 space-y-2"><div class="text-[11px] font-bold uppercase text-sky-300">Your Squad (Stamina Turn Order)</div><div id="arena-allies" class="space-y-2"></div></div>
+        <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3 space-y-2"><div class="text-[11px] font-bold uppercase text-rose-400">Enemies (Click to Target)</div><div id="arena-enemies" class="space-y-2"></div></div>
+      </div>
+      <div id="skill-bar" class="rounded-xl bg-slate-900/90 border border-indigo-500/30 p-3 flex flex-wrap items-center justify-between gap-2"><span id="turn-actor-label" class="text-xs font-semibold text-indigo-300">Start a Boss or Resource battle above.</span><div id="skill-buttons" class="flex flex-wrap gap-2"></div></div>
+      <div id="battle-log" class="rounded-xl bg-slate-950/80 border border-slate-800 p-3 h-28 overflow-y-auto text-xs text-slate-300 space-y-1"></div>
     </section>
   </div>
 
+  <!-- Modals -->
   <div id="pull-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass rounded-2xl max-w-2xl w-full p-5 flex flex-col gap-3 max-h-[85vh] overflow-y-auto">
       <div class="flex items-center justify-between"><h3 class="text-sm sm:text-base font-bold text-white" id="pull-modal-title">Summon Results</h3><button id="btn-close-pull" class="px-3 py-1 rounded-lg bg-slate-800 text-xs font-semibold text-white">Close</button></div>
       <div id="pull-modal-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
     </div>
   </div>
-
   <div id="evolve-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass rounded-2xl max-w-md w-full p-5 flex flex-col gap-3">
       <h3 class="text-sm font-bold text-white" id="evolve-title">Evolve Monster</h3>
