@@ -1,6 +1,7 @@
 // Core Data Models: Elements, Tokens, 8-Stat Schema (CR cap 100%), Star/Level Caps & Skills
 export const ELEM_ICON = { fire: '🔥', grass: '🌿', water: '💧' };
 export const ELEM_ART = { fire: 'assets/fire.jpg', grass: 'assets/grass.jpg', water: 'assets/water.jpg' };
+export function getHeroArt(heroId) { return `assets/heroes/${heroId}.jpg`; }
 
 // Fire > Grass > Water > Fire (+25% outgoing, -15% incoming)
 export function getElementalMultiplier(a, d) {

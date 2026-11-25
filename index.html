@@ -36,6 +36,8 @@
     @keyframes floatHero { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
     @keyframes summonPulse { 0% { transform: scale(0.4); opacity: 0.2; } 50% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
     .summon-burst-anim { animation: summonPulse 0.6s ease-out forwards; }
+    @keyframes spinSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spin-slow { animation: spinSlow 24s linear infinite; }
     .float-hero { animation: floatHero 3.4s ease-in-out infinite; }
     .r-common { border-color: rgba(148,163,184,0.45); }
     .r-uncommon { border-color: rgba(52,211,153,0.55); }
@@ -213,7 +215,10 @@
 
         <!-- CENTER: Glowing Altar Focus & Pull Animation -->
         <div class="md:col-span-5 flex flex-col items-center justify-center relative min-h-[160px] md:min-h-[300px]">
-          <div id="summon-burst" class="hidden w-48 h-48 rounded-full border-4 border-amber-300 bg-radial from-amber-300/60 via-indigo-500/40 to-transparent shadow-[0_0_80px_rgba(251,191,36,0.9)]"></div>
+          <div class="spin-slow w-56 h-56 sm:w-64 sm:h-64 rounded-full border border-amber-300/35 flex items-center justify-center pointer-events-none">
+            <div class="w-44 h-44 sm:w-52 sm:h-52 rounded-full border border-sky-400/40 border-dashed"></div>
+          </div>
+          <div id="summon-burst" class="hidden absolute w-48 h-48 rounded-full border-4 border-amber-300 bg-amber-300/30 shadow-[0_0_90px_rgba(251,191,36,0.95)]"></div>
           <div class="mt-auto rpg-bar px-4 py-1.5 rounded-full text-center text-xs text-amber-200">
             <span id="cycle-info">Cycle: 0 / 100</span> · <span id="cycle-cap-info" class="text-slate-300">10 Uncommon, 1 Rare</span>
           </div>

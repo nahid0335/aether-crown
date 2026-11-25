@@ -1,4 +1,4 @@
-import { ELEM_ICON, ELEM_ART, TOKENS, HEROES, createDefaultState, getMaxLv } from './data.js';
+import { ELEM_ICON, getHeroArt, TOKENS, HEROES, createDefaultState, getMaxLv } from './data.js';
 import { createInst, pullOnce } from './gacha.js';
 import { getLeadBonuses, computeStats, grantExp, getElementalMultiplier } from './combat.js';
 import { initFirebaseSync } from './firebase.js';
@@ -39,7 +39,7 @@ function openCharDetail(hero, star = 1, level = 1) {
   const rc = RARITY_COLOR[hero.rarity];
   const card = document.getElementById('char-detail-card');
   card.className = `glass rounded-2xl max-w-md w-full p-5 flex flex-col gap-3 border-2 ${rc.border}`;
-  document.getElementById('cd-img').src = ELEM_ART[hero.element];
+  document.getElementById('cd-img').src = getHeroArt(hero.id);
   document.getElementById('cd-elem').textContent = ELEM_ICON[hero.element];
   document.getElementById('cd-name').textContent = hero.name;
   document.getElementById('cd-stars').textContent = '★'.repeat(star);
@@ -153,9 +153,9 @@ function renderRoster() {
     card.innerHTML = `
       <div class="flex justify-between items-start">
         <div>
-          <div class="text-sm font-bold text-white">${ELEM_ICON[t.element]} ${t.name}</div>
-          <div class="text-[11px] text-amber-300">${'★'.repeat(inst.star)}${'☆'.repeat(6 - inst.star)} · Lv ${inst.level}/${maxLv} · <span class="uppercase text-slate-300">${t.rarity}</span></div>
-        </div>
+          <div class="flex items-center gap-2"><img src="${getHeroArt(t.id)}" alt="${t.name}" class="w-10 h-10 rounded-lg object-cover border border-amber-400/40" /><div><div class="flex items-center gap-2"><img src="${getHeroArt(t.id)}" alt="${t.name}" class="w-10 h-10 rounded-lg object-cover border border-sky-400/40" /><div><div class="text-sm font-bold text-white">${ELEM_ICON[t.element]} ${t.name}</div>
+          <div class="text-[11px] text-amber-300">${'★'.repeat(inst.star)} · Lv ${inst.level}/${maxLv} · <span class="uppercase text-slate-300">${t.rarity}</span></div>
+        </div></div>
         ${isLead ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/25 text-amber-300 text-[10px] font-bold">LEAD</span>' : ''}
       </div>
       <div class="grid grid-cols-4 gap-1 text-[10px] bg-slate-950/60 rounded-lg p-1.5 font-mono text-slate-300">
@@ -228,8 +228,8 @@ function renderDex() {
       <div class="flex justify-between items-start">
         <div>
           <div class="text-sm font-bold text-white">${ELEM_ICON[t.element]} ${t.name}</div>
-          <div class="text-[11px] uppercase text-amber-300">${t.rarity} · Base 1★ Stats</div>
-        </div>
+          <div class="text-[11px] uppercase text-amber-300">${t.rarity} · Base ★</div>
+        </div></div>
         <span class="px-2 py-0.5 rounded text-[10px] font-bold ${ownedCount > 0 ? 'bg-emerald-500/25 text-emerald-300' : 'bg-slate-800 text-slate-400'}">${ownedCount > 0 ? `Owned ×${ownedCount}` : 'Not Summoned'}</span>
       </div>
       <div class="grid grid-cols-4 gap-1 text-[10px] bg-slate-950/60 rounded-lg p-1.5 font-mono text-slate-300">
@@ -467,7 +467,7 @@ function renderHome() {
       card.style.animationDelay = `${i * 0.45}s`;
       card.innerHTML = `
         <div class="w-20 h-24 sm:w-28 sm:h-32 rounded-xl overflow-hidden border-2 ${isLead ? 'border-amber-400 shadow-[0_0_24px_rgba(251,191,36,0.45)]' : 'border-slate-500/70 shadow-xl'} bg-slate-950 relative">
-          <img src="${ELEM_ART[h.element]}" alt="${h.name}" class="w-full h-full object-cover" />
+          <img src="${getHeroArt(h.id)}" alt="${h.name}" class="w-full h-full object-cover" />
           <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-transparent p-1.5 text-center">
             <div class="text-[10px] sm:text-xs font-bold text-white truncate">${h.name}</div>
             <div class="text-[9px] text-amber-300">${'★'.repeat(inst.star)} Lv.${inst.level}</div>
@@ -526,7 +526,7 @@ function handlePull(n) {
       card.className = `btn-tap rounded-xl border-2 ${rc.border} ${rc.bg} p-2 flex flex-col items-center text-center gap-1 cursor-pointer`;
       card.innerHTML = `
         <div class="relative w-full aspect-square rounded-lg overflow-hidden">
-          <img src="${ELEM_ART[r.hero.element]}" alt="${r.hero.name}" class="w-full h-full object-cover" />
+          <img src="${getHeroArt(r.hero.id)}" alt="${r.hero.name}" class="w-full h-full object-cover" />
           <span class="absolute top-1 left-1 text-xs bg-slate-950/75 rounded-full px-1">${ELEM_ICON[r.hero.element]}</span>
         </div>
         <div class="text-[11px] font-bold ${rc.text} truncate w-full">${r.hero.name}</div>
