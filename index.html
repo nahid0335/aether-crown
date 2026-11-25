@@ -25,6 +25,25 @@
   </style>
 </head>
 <body class="p-3 sm:p-5 flex flex-col items-center">
+  <!-- Login First Gate -->
+  <div id="login-gate" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass rounded-2xl max-w-sm w-full p-6 flex flex-col items-center text-center gap-4 shadow-2xl border border-indigo-500/30">
+      <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-3xl">👑</div>
+      <div>
+        <h2 class="text-xl font-bold text-white">Aether Crown</h2>
+        <p class="text-xs text-slate-400 mt-1">Sign in with Google to load your cloud save and sync summons &amp; battles across all devices.</p>
+      </div>
+      <button id="btn-gate-signin" class="btn-tap w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
+        <span>☁️ Continue with Google</span>
+      </button>
+      <p id="gate-msg" class="text-xs text-amber-300 min-h-[16px]"></p>
+      <button id="btn-gate-offline" class="text-[11px] text-slate-400 hover:text-slate-200 underline">
+        Continue Offline (Local Save Only)
+      </button>
+    </div>
+  </div>
+
+
   <div class="w-full max-w-5xl flex flex-col gap-3">
     <!-- Top HUD -->
     <header class="glass rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
@@ -933,6 +952,10 @@
 
     const btnAuth = document.getElementById('btn-auth');
     const statusEl = document.getElementById('cloud-status');
+    const loginGate = document.getElementById('login-gate');
+    const btnGateSignIn = document.getElementById('btn-gate-signin');
+    const btnGateOffline = document.getElementById('btn-gate-offline');
+    const gateMsg = document.getElementById('gate-msg');
 
 
     try {
@@ -961,6 +984,8 @@
       onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         if (user) {
+          loginGate.classList.add('hidden');
+          gateMsg.textContent = '';
           btnAuth.textContent = 'Sign Out';
           btnAuth.className = 'btn-tap px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold';
           statusEl.textContent = '☁️ Loading...';
@@ -969,19 +994,35 @@
             const snap = await getDoc(ref);
             if (snap.exists() && snap.data().state) {
               window.applyCloudState(snap.data().state);
-              statusEl.textContent = `☁️ ${user.displayName ? user.displayName.split(' ')[0] : 'Synced'}`;
             } else {
               await window.cloudSyncSave(window.getGameState());
-              statusEl.textContent = `☁️ ${user.displayName ? user.displayName.split(' ')[0] : 'Synced'}`;
             }
+            statusEl.textContent = `☁️ ${user.displayName ? user.displayName.split(' ')[0] : 'Synced'}`;
           } catch (err) {
             statusEl.textContent = '⚠️ Rules/Load err';
           }
         } else {
+          loginGate.classList.remove('hidden');
           btnAuth.textContent = '☁️ Sign In';
           btnAuth.className = 'btn-tap px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold';
           statusEl.textContent = 'Local only';
         }
+      });
+
+
+      btnGateSignIn.addEventListener('click', async () => {
+        gateMsg.textContent = 'Opening Google Sign-In...';
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (err) {
+          gateMsg.textContent = 'Sign-in blocked here — host on GitHub Pages or continue offline.';
+        }
+      });
+
+
+      btnGateOffline.addEventListener('click', () => {
+        loginGate.classList.add('hidden');
+        statusEl.textContent = 'Local only';
       });
 
 
