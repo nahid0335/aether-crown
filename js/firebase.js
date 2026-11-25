@@ -113,6 +113,8 @@ export function initFirebaseSync({ getState, applyCloudState }) {
         if (err && (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment')) {
           gateMsg.textContent = 'Popup blocked — redirecting...';
           try { await signInWithRedirect(auth, provider); } catch (e2) { gateMsg.textContent = `Error: ${e2.code || e2.message}`; }
+        } else if (err && err.code === 'auth/unauthorized-domain') {
+          gateMsg.textContent = 'Preview domain cannot use Google Sign-In. Click "Continue Offline" below to test here, or use your live GitHub Pages link.';
         } else {
           gateMsg.textContent = `Error: ${err.code || err.message || 'Sign-in failed'}`;
         }

@@ -174,110 +174,135 @@
 
     <!-- SUB-SCREEN OVERLAYS (Summon, Heroes, Index, Rest, Battle) -->
     <section id="view-summon" class="hidden fixed inset-0 z-30 bg-slate-950 flex flex-col justify-between p-3 sm:p-5 overflow-hidden">
-      <img src="assets/summon_bg.jpg" alt="Summon Altar" class="absolute inset-0 w-full h-full object-cover z-0" />
+      <img id="summon-bg-img" src="assets/summon_bg.jpg" alt="Altar Background" class="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300" />
       <div class="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/15 to-slate-950/90 z-0 pointer-events-none"></div>
 
       <!-- Top Header -->
       <div class="relative z-10 flex items-center justify-between">
         <div class="rpg-bar px-4 py-1.5 rounded-lg flex items-center gap-3">
-          <h2 class="font-rpg text-sm sm:text-base font-bold text-amber-200">✦ Astral Summon Altar</h2>
-          <span class="text-xs text-emerald-300 font-semibold">🍀 Luck: <span id="summon-luck-label">0%</span></span>
+          <h2 id="summon-mode-heading" class="font-rpg text-sm sm:text-base font-bold text-amber-200">✦ Shard Pull Altar</h2>
+          <span class="text-xs text-emerald-300 font-semibold">🍀 Pull Luck: <span id="summon-luck-label">0%</span></span>
+          <span class="text-xs text-amber-300 font-semibold">★ Star Luck: <span id="summon-starluck-label">0%</span></span>
         </div>
         <button data-nav="home" class="rpg-bar btn-tap px-4 py-1.5 rounded-lg text-xs font-semibold text-amber-200">✕ Bastion</button>
       </div>
 
-      <!-- Main 3-Column Game Summon Layout -->
-      <div class="relative z-10 flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 items-center my-2 overflow-y-auto md:overflow-hidden">
-        <!-- LEFT: Big Aesthetic Tier Icons (No "token" word) -->
-        <div class="md:col-span-3 flex md:flex-col gap-2.5 overflow-x-auto md:overflow-visible">
-          <button data-tier="bronze" class="tier-btn rpg-rail-btn p-3 text-left flex items-center gap-3 min-w-[175px] border-2 border-amber-500/80 bg-gradient-to-r from-amber-950/75 to-slate-900/90">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-600/40 to-orange-950 border border-amber-400/70 flex items-center justify-center text-3xl shadow-inner shrink-0">🥉</div>
-            <div class="flex-1">
-              <div class="font-rpg text-xs font-bold text-amber-300">Bronze Sigil</div>
-              <div class="text-[10px] text-amber-100/70">Common · Uncommon · Rare</div>
-            </div>
-            <span id="serial-bronze" class="text-sm font-extrabold text-amber-200">0</span>
-          </button>
+      <!-- Locked 3-Zone Layout (Consistent across Pull / Forge / Hero Summon) -->
+      <div class="relative z-10 flex-1 flex flex-col md:flex-row gap-3 items-stretch my-2 overflow-hidden">
+        <!-- LEFT ZONE (fixed width on desktop) -->
+        <div class="w-full md:w-64 shrink-0 flex flex-col justify-center">
+          <!-- Left: Shard Pull Selector -->
+          <div id="left-pull-list" class="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible">
+            <button data-tier="bronze" class="tier-btn rpg-rail-btn p-2 text-left flex items-center gap-2.5 min-w-[180px] border-2 border-amber-400">
+              <img src="assets/tokens/bronze.jpg" alt="Bronze Sigil" class="w-11 h-11 rounded-lg object-cover border border-amber-400/80 shrink-0" />
+              <div class="flex-1 min-w-0"><div class="font-rpg text-xs font-bold text-amber-300 truncate">Bronze Sigil</div><div class="text-[10px] text-slate-300">C · U · R</div></div>
+              <span id="serial-bronze" class="text-sm font-extrabold text-amber-200">0</span>
+            </button>
+            <button data-tier="silver" class="tier-btn rpg-rail-btn p-2 text-left flex items-center gap-2.5 min-w-[180px]">
+              <img src="assets/tokens/silver.jpg" alt="Silver Relic" class="w-11 h-11 rounded-lg object-cover border border-slate-300/80 shrink-0" />
+              <div class="flex-1 min-w-0"><div class="font-rpg text-xs font-bold text-slate-100 truncate">Silver Relic</div><div class="text-[10px] text-slate-300">R · E · L</div></div>
+              <span id="serial-silver" class="text-sm font-extrabold text-white">0</span>
+            </button>
+            <button data-tier="gold" class="tier-btn rpg-rail-btn p-2 text-left flex items-center gap-2.5 min-w-[180px]">
+              <img src="assets/tokens/gold.jpg" alt="Gold Crown" class="w-11 h-11 rounded-lg object-cover border border-yellow-400/80 shrink-0" />
+              <div class="flex-1 min-w-0"><div class="font-rpg text-xs font-bold text-yellow-300 truncate">Gold Crown</div><div class="text-[10px] text-slate-300">E · L</div></div>
+              <span id="serial-gold" class="text-sm font-extrabold text-yellow-300">0</span>
+            </button>
+            <button data-tier="platinum" class="tier-btn rpg-rail-btn p-2 text-left flex items-center gap-2.5 min-w-[180px]">
+              <img src="assets/tokens/platinum.jpg" alt="Platinum Eclipse" class="w-11 h-11 rounded-lg object-cover border border-indigo-400/80 shrink-0" />
+              <div class="flex-1 min-w-0"><div class="font-rpg text-xs font-bold text-indigo-300 truncate">Platinum Eclipse</div><div class="text-[10px] text-slate-300">Pure Legend</div></div>
+              <span id="serial-platinum" class="text-sm font-extrabold text-indigo-200">0</span>
+            </button>
+          </div>
 
-          <button data-tier="silver" class="tier-btn rpg-rail-btn p-3 text-left flex items-center gap-3 min-w-[175px] bg-gradient-to-r from-slate-800/80 to-slate-900/90">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-300/30 to-slate-800 border border-slate-300/60 flex items-center justify-center text-3xl shadow-inner shrink-0">🥈</div>
-            <div class="flex-1">
-              <div class="font-rpg text-xs font-bold text-slate-100">Silver Relic</div>
-              <div class="text-[10px] text-slate-300/80">Rare · Epic · Legend</div>
-            </div>
-            <span id="serial-silver" class="text-sm font-extrabold text-white">0</span>
-          </button>
+          <!-- Left: Forge Selector (Tokens only: Upgrade 100->1 or Dismantle 1->100) -->
+          <div id="left-forge-list" class="hidden flex md:flex-col gap-2 overflow-x-auto md:overflow-visible">
+            <button data-forge="bronze" class="forge-btn rpg-rail-btn p-2 text-left flex items-center gap-2.5 min-w-[180px] border-2 border-amber-400">
+              <img src="assets/tokens/bronze.jpg" alt="Bronze Sigil" class="w-11 h-11 rounded-lg object-cover border border-amber-400/80 shrink-0" />
+              <div class="flex-1 min-w-0"><div class="font-rpg text-xs font-bold text-amber-300 truncate">Bronze Sigil</div><div class="text-[10px] text-slate-200">Owned: <strong id="fowned-bronze">0</strong></div></div>
+            </button>
+            <button data-forge="silver" class="forge-btn rpg-rail-btn p-2 text-left flex items-center gap-2.5 min-w-[180px]">
+              <img src="assets/tokens/silver.jpg" alt="Silver Relic" class="w-11 h-11 rounded-lg object-cover border border-slate-300/80 shrink-0" />
+              <div class="flex-1 min-w-0"><div class="font-rpg text-xs font-bold text-slate-100 truncate">Silver Relic</div><div class="text-[10px] text-slate-200">Owned: <strong id="fowned-silver">0</strong></div></div>
+            </button>
+            <button data-forge="gold" class="forge-btn rpg-rail-btn p-2 text-left flex items-center gap-2.5 min-w-[180px]">
+              <img src="assets/tokens/gold.jpg" alt="Gold Crown" class="w-11 h-11 rounded-lg object-cover border border-yellow-400/80 shrink-0" />
+              <div class="flex-1 min-w-0"><div class="font-rpg text-xs font-bold text-yellow-300 truncate">Gold Crown</div><div class="text-[10px] text-slate-200">Owned: <strong id="fowned-gold">0</strong></div></div>
+            </button>
+            <button data-forge="platinum" class="forge-btn rpg-rail-btn p-2 text-left flex items-center gap-2.5 min-w-[180px]">
+              <img src="assets/tokens/platinum.jpg" alt="Platinum Eclipse" class="w-11 h-11 rounded-lg object-cover border border-indigo-400/80 shrink-0" />
+              <div class="flex-1 min-w-0"><div class="font-rpg text-xs font-bold text-indigo-300 truncate">Platinum Eclipse</div><div class="text-[10px] text-slate-200">Owned: <strong id="fowned-platinum">0</strong></div></div>
+            </button>
+          </div>
 
-          <button data-tier="gold" class="tier-btn rpg-rail-btn p-3 text-left flex items-center gap-3 min-w-[175px] bg-gradient-to-r from-yellow-950/75 to-slate-900/90">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400/35 to-amber-950 border border-yellow-400/80 flex items-center justify-center text-3xl shadow-inner shrink-0">👑</div>
-            <div class="flex-1">
-              <div class="font-rpg text-xs font-bold text-yellow-300">Gold Crown</div>
-              <div class="text-[10px] text-yellow-100/75">Epic · Legend</div>
-            </div>
-            <span id="serial-gold" class="text-sm font-extrabold text-yellow-300">0</span>
-          </button>
 
-          <button data-tier="platinum" class="tier-btn rpg-rail-btn p-3 text-left flex items-center gap-3 min-w-[175px] bg-gradient-to-r from-indigo-950/80 to-slate-900/90">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400/40 to-violet-950 border border-indigo-400/80 flex items-center justify-center text-3xl shadow-inner shrink-0">💠</div>
-            <div class="flex-1">
-              <div class="font-rpg text-xs font-bold text-indigo-300">Platinum Eclipse</div>
-              <div class="text-[10px] text-indigo-200/80">Pure Legend</div>
-            </div>
-            <span id="serial-platinum" class="text-sm font-extrabold text-indigo-200">0</span>
-          </button>
         </div>
 
-        <!-- CENTER: Summoning Pit + Throw Animation + Middle-Bottom Channel Buttons -->
-        <div class="md:col-span-5 flex flex-col items-center justify-between h-full py-2 relative min-h-[240px]">
-          <div class="flex-1 flex items-center justify-center relative w-full">
-            <div class="spin-slow w-52 h-52 sm:w-64 sm:h-64 rounded-full border border-amber-300/35 flex items-center justify-center pointer-events-none">
-              <div class="w-40 h-40 sm:w-52 sm:h-52 rounded-full border border-sky-400/40 border-dashed"></div>
+        <!-- CENTER ZONE (flex-1, consistent across all 3 modes) -->
+        <div class="flex-1 flex flex-col items-center justify-between relative min-h-[220px] overflow-hidden">
+          <!-- Center Focus: Pull Pit Animation -->
+          <div id="center-pull-area" class="flex-1 w-full flex flex-col items-center justify-between py-2">
+            <div class="flex-1 flex items-center justify-center relative w-full">
+              <div class="spin-slow w-48 h-48 sm:w-60 sm:h-60 rounded-full border border-amber-300/35 flex items-center justify-center pointer-events-none">
+                <div class="w-36 h-36 sm:w-48 sm:h-48 rounded-full border border-sky-400/40 border-dashed"></div>
+              </div>
+              <img id="thrown-sigil" src="assets/tokens/bronze.jpg" alt="" class="hidden absolute w-16 h-16 rounded-xl object-cover border-2 border-amber-300 shadow-[0_0_28px_rgba(251,191,36,0.95)] pointer-events-none" />
+              <div id="summon-burst" class="hidden absolute w-48 h-48 rounded-full border-4 border-amber-300 bg-amber-300/30 shadow-[0_0_90px_rgba(251,191,36,0.95)] pointer-events-none"></div>
             </div>
-            <div id="thrown-sigil" class="hidden absolute text-5xl drop-shadow-[0_0_24px_rgba(251,191,36,0.95)] pointer-events-none">🥉</div>
-            <div id="summon-burst" class="hidden absolute w-48 h-48 rounded-full border-4 border-amber-300 bg-amber-300/30 shadow-[0_0_90px_rgba(251,191,36,0.95)] pointer-events-none"></div>
+            <div class="flex flex-col items-center gap-2 w-full">
+              <p id="summon-msg" class="text-xs text-amber-300 font-semibold min-h-[16px]"></p>
+              <div class="flex flex-wrap items-center justify-center gap-2">
+                <button id="btn-pull-1" class="rpg-rail-btn py-2.5 px-5 text-xs sm:text-sm font-bold text-white">Pull ×1</button>
+                <button id="btn-pull-10" class="rpg-rail-btn py-2.5 px-5 text-xs sm:text-sm font-bold text-indigo-200 border-indigo-400">Pull ×10</button>
+                <button id="btn-pull-100" class="rpg-battle-crest py-2.5 px-6 text-xs sm:text-sm font-extrabold text-white">Pull ×100</button>
+              </div>
+            </div>
           </div>
 
-          <!-- Middle Bottom Pull Buttons -->
-          <div class="flex flex-col items-center gap-2 w-full">
-            <p id="summon-msg" class="text-xs text-amber-300 font-semibold min-h-[16px]"></p>
-            <div class="flex flex-wrap items-center justify-center gap-2.5">
-              <button id="btn-pull-1" class="rpg-rail-btn py-2.5 px-5 text-xs sm:text-sm font-bold text-white">Channel ×1</button>
-              <button id="btn-pull-10" class="rpg-rail-btn py-2.5 px-5 text-xs sm:text-sm font-bold text-indigo-200 border-indigo-400">Channel ×10</button>
-              <button id="btn-pull-100" class="rpg-battle-crest py-2.5 px-6 text-xs sm:text-sm font-extrabold text-white">Channel ×100</button>
+          <!-- Center Focus: Forge Anvil Animation + Middle-Bottom Upgrade & Dismantle Buttons -->
+          <div id="center-forge-area" class="hidden flex-1 w-full flex flex-col items-center justify-between py-2">
+            <div class="flex-1 flex items-center justify-center relative w-full">
+              <img id="forge-item-preview" src="assets/tokens/bronze.jpg" alt="" class="hidden w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.9)] pointer-events-none" />
+              <div id="forge-burst" class="hidden absolute w-52 h-52 rounded-full border-4 border-amber-400 bg-amber-400/35 shadow-[0_0_95px_rgba(245,158,11,0.95)] pointer-events-none"></div>
             </div>
+            <div class="flex flex-col items-center gap-2 w-full">
+              <p id="forge-msg" class="text-xs text-amber-300 font-semibold min-h-[16px]"></p>
+              <div class="flex flex-wrap items-center justify-center gap-2.5">
+                <button id="btn-forge-upgrade" class="rpg-battle-crest py-2.5 px-5 text-xs sm:text-sm font-extrabold text-white">Upgrade 100 Bronze → 1 Silver</button>
+                <button id="btn-forge-dismantle" class="rpg-rail-btn py-2.5 px-5 text-xs sm:text-sm font-bold text-sky-200 border-sky-400">Dismantle 1 → 100</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center Focus: Hero Summon Grid (Empty = shows nothing, only background!) -->
+          <div id="center-heroes-area" class="hidden flex-1 w-full flex flex-col overflow-hidden px-1 py-2 gap-2.5">
+            <div id="hero-sort-bar" class="hidden flex items-center">
+              <select id="frag-sort" class="rpg-bar px-3 py-1.5 rounded-lg text-xs font-bold text-amber-200 focus:outline-none cursor-pointer">
+                <option value="frags">Sort: Most Fragments</option>
+                <option value="ready">Sort: Ready (100+)</option>
+                <option value="rarity">Sort: By Rarity</option>
+                <option value="element">Sort: By Element</option>
+              </select>
+            </div>
+            <div id="hero-summon-burst" class="hidden fixed inset-0 z-40 flex items-center justify-center pointer-events-none"><div class="w-64 h-64 rounded-full border-4 border-amber-300 bg-amber-300/35 shadow-[0_0_120px_rgba(251,191,36,0.95)] summon-burst-anim"></div></div>
+            <div id="hero-frag-list" class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 content-start"></div>
           </div>
         </div>
 
-        <!-- RIGHT: 3-Option Panel (Channel / Forge / Awaken) -->
-        <div class="md:col-span-4 glass rounded-xl p-3.5 flex flex-col gap-3 max-h-[76vh] overflow-y-auto">
-          <div class="grid grid-cols-3 rounded-lg bg-slate-900/90 p-1 text-[11px] sm:text-xs font-semibold gap-1">
-            <button id="tab-sum-channel" class="py-1.5 rounded-md bg-indigo-600 text-white">✦ Channel</button>
-            <button id="tab-sum-forge" class="py-1.5 rounded-md text-slate-300">⚒ Forge</button>
-            <button id="tab-sum-awaken" class="py-1.5 rounded-md text-slate-300">🌟 Awaken</button>
-          </div>
-
-          <!-- Option 1: Channel Info (Simple, no internal math) -->
-          <div id="panel-sum-channel" class="flex flex-col gap-2.5 text-xs">
-            <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-3 space-y-1.5">
-              <div id="channel-title" class="font-rpg text-sm font-bold text-amber-300">Bronze Sigil</div>
-              <p id="channel-desc" class="text-slate-300 leading-relaxed">Throw into the Astral Pit to receive Common, Uncommon, or Rare character fragments.</p>
-              <div class="pt-1 text-[11px] text-emerald-300 font-medium">🧩 Collect 100 fragments of a hero to summon them in Awaken.</div>
-            </div>
-          </div>
-
-          <!-- Option 2: Forge (Craft fragments -> full item, 100x upgrade) -->
-          <div id="panel-sum-forge" class="hidden flex flex-col gap-2 text-xs">
-            <div class="text-[11px] text-slate-400">Combine 100 fragments into 1 item, or upgrade 100 items to the next tier.</div>
-            <div class="flex items-center justify-between bg-slate-900/80 rounded-lg p-2"><span>🥉 <strong id="frag-bronze">0</strong>/100</span><div class="flex gap-1"><button id="craft-bronze" class="btn-tap px-2 py-1 rounded bg-slate-700 text-white">100→1</button><button id="up-bronze" class="btn-tap px-2 py-1 rounded bg-sky-700 text-white">100🥉→1🥈</button></div></div>
-            <div class="flex items-center justify-between bg-slate-900/80 rounded-lg p-2"><span>🥈 <strong id="frag-silver">0</strong>/100</span><div class="flex gap-1"><button id="craft-silver" class="btn-tap px-2 py-1 rounded bg-slate-700 text-white">100→1</button><button id="up-silver" class="btn-tap px-2 py-1 rounded bg-yellow-700 text-white">100🥈→1👑</button></div></div>
-            <div class="flex items-center justify-between bg-slate-900/80 rounded-lg p-2"><span>👑 <strong id="frag-gold">0</strong>/100</span><div class="flex gap-1"><button id="craft-gold" class="btn-tap px-2 py-1 rounded bg-slate-700 text-white">100→1</button><button id="up-gold" class="btn-tap px-2 py-1 rounded bg-indigo-700 text-white">100👑→1💠</button></div></div>
-          </div>
-
-          <!-- Option 3: Awaken (Summon character at 100/100 fragments) -->
-          <div id="panel-sum-awaken" class="hidden flex flex-col gap-2 text-xs">
-            <div class="text-[11px] text-slate-400">Summon a hero once you hold 100 fragments. Stars (★–★★★★★) are revealed on summon!</div>
-            <div id="hero-frag-list" class="max-h-56 overflow-y-auto space-y-1.5"></div>
-          </div>
+        <!-- RIGHT ZONE (fixed width mode switcher) -->
+        <div class="w-full md:w-52 shrink-0 flex md:flex-col justify-center gap-2">
+          <button id="tab-sum-pull" class="rpg-rail-btn p-3 text-left border-2 border-indigo-400">
+            <div class="font-rpg text-xs sm:text-sm font-bold text-white">✦ Shard Pull</div>
+            <div class="text-[10px] text-slate-300">Collect Hero Fragments</div>
+          </button>
+          <button id="tab-sum-forge" class="rpg-rail-btn p-3 text-left">
+            <div class="font-rpg text-xs sm:text-sm font-bold text-amber-200">⚒ Forge</div>
+            <div class="text-[10px] text-slate-300">Craft &amp; Upgrade Tiers</div>
+          </button>
+          <button id="tab-sum-heroes" class="rpg-rail-btn p-3 text-left">
+            <div class="font-rpg text-xs sm:text-sm font-bold text-emerald-300">🌟 Hero Summon</div>
+            <div class="text-[10px] text-slate-300">Summon at 100 Frags</div>
+          </button>
         </div>
       </div>
     </section>
@@ -318,10 +343,13 @@
   </div>
 
   <!-- Modals -->
-  <div id="pull-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass rounded-2xl max-w-2xl w-full p-5 flex flex-col gap-3 max-h-[85vh] overflow-y-auto">
+  <div id="pull-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass rounded-2xl max-w-2xl w-full p-5 flex flex-col gap-3 max-h-[85vh] overflow-y-auto relative overflow-hidden border-2 border-amber-400/40">
+      <img src="assets/summon_bg.jpg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-35 pointer-events-none" />
+      <div class="relative z-10 flex flex-col gap-3">
       <div class="flex items-center justify-between"><h3 class="text-sm sm:text-base font-bold text-white" id="pull-modal-title">Summon Results</h3><button id="btn-close-pull" class="px-3 py-1 rounded-lg bg-slate-800 text-xs font-semibold text-white">Close</button></div>
       <div id="pull-modal-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
+      </div>
     </div>
   </div>
   <div id="evolve-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">

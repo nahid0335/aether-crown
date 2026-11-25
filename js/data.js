@@ -50,7 +50,8 @@ export function createDefaultState() {
     instances: [],
     squad: [],
     restArea: [],
-    luck: 0,
+    pullLuck: 0,
+    starLuck: 0,
     cycles: { bronze: { pulls: 0, uncommon: 0, rare: 0 }, silver: { pulls: 0, legend: 0 }, gold: { pulls: 0, legend: 0 } },
     stage: 1
   };

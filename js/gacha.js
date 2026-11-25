@@ -10,28 +10,31 @@ function pickHero(rarity) {
   return p[Math.floor(Math.random() * p.length)];
 }
 
-export function rollSummonStar(rarity, luck) {
+export function rollSummonStar(rarity, state) {
   const r = Math.random();
-  const luckBoost = Math.min(0.015, (luck || 0) * 0.0003);
+  const sLuck = state.starLuck || 0;
+  const luckBonus = Math.min(0.03, sLuck * 0.001); // max +3% at 30 starLuck
+  let star = 1;
   if (rarity === 'legend' || rarity === 'epic') {
-    if (r < 0.004 + luckBoost) return 5;
-    if (r < 0.024 + luckBoost) return 4;
-    if (r < 0.085) return 3;
-    if (r < 0.230) return 2;
-    return 1;
+    if (r < 0.004 + luckBonus * 0.4) star = 5;
+    else if (r < 0.022 + luckBonus) star = 4;
+    else if (r < 0.080 + luckBonus * 1.5) star = 3;
+    else if (r < 0.220 + luckBonus * 2.0) star = 2;
+  } else if (rarity === 'rare') {
+    if (r < 0.003 + luckBonus * 0.5) star = 4;
+    else if (r < 0.022 + luckBonus) star = 3;
+    else if (r < 0.110 + luckBonus * 1.5) star = 2;
+  } else {
+    if (r < 0.002) star = 3;
+    else if (r < 0.030 + luckBonus) star = 2;
   }
-  if (rarity === 'rare') {
-    if (r < 0.003 + luckBoost * 0.5) return 4;
-    if (r < 0.022) return 3;
-    if (r < 0.110) return 2;
-    return 1;
-  }
-  if (r < 0.002) return 3;
-  if (r < 0.030) return 2;
-  return 1;
+
+  if (star >= 4) state.starLuck = 0;
+  else if (star === 1) state.starLuck = Math.min(30, +(sLuck + 1).toFixed(1));
+  return star;
 }
 
-// 1 pull = 1 Character Fragment (does NOT grant the character yet)
+// 1 pull = 1 Character Fragment. pullLuck resets to 0 on any Legend fragment!
 export function pullOnce(state, tokenId) {
   const cfg = TOKENS[tokenId];
   if (!cfg || (state.tokens[tokenId] || 0) < 1) return null;
@@ -57,12 +60,18 @@ export function pullOnce(state, tokenId) {
     } else {
       if (cyc.legend === 0 && rem === 0) rarity = 'legend';
       else if (cyc.legend < cfg.maxLegendPerCycle) {
-        const chance = Math.min(0.35, cfg.weights.legend + Math.min(0.25, state.luck * 0.005));
+        // Gentle luck boost (base 1% silver / 6% gold + up to +4% from pullLuck, reset on Legend!)
+        const luckBoost = Math.min(0.04, (state.pullLuck || 0) * 0.001);
+        const chance = cfg.weights.legend + luckBoost;
         if (Math.random() < chance) rarity = 'legend';
       }
       if (!rarity) rarity = tokenId === 'silver' ? (Math.random() < 0.17 / 0.99 ? 'epic' : 'rare') : 'epic';
-      if (rarity === 'legend') { cyc.legend += 1; state.luck = Math.max(0, Math.floor(state.luck * 0.4)); }
-      else { state.luck = Math.min(50, +(state.luck + (tokenId === 'gold' ? 0.8 : 0.4)).toFixed(2)); }
+      if (rarity === 'legend') {
+        cyc.legend += 1;
+        state.pullLuck = 0; // Reset pull luck when getting Legend fragment!
+      } else {
+        state.pullLuck = Math.min(40, +((state.pullLuck || 0) + (tokenId === 'gold' ? 0.35 : 0.15)).toFixed(2));
+      }
       if (cyc.pulls >= cfg.cycleSize) state.cycles[tokenId] = { pulls: 0, legend: 0 };
     }
   }
@@ -72,13 +81,12 @@ export function pullOnce(state, tokenId) {
   return { hero, frags: 1 };
 }
 
-// 100 Hero Fragments = 1 Summon (creates a copy & rolls 1-5★)
 export function summonFromFragments(state, heroId) {
   if ((state.heroFragments[heroId] || 0) < HERO_SUMMON_FRAGMENT_COST) return null;
   const hero = HEROES.find(h => h.id === heroId);
   if (!hero) return null;
   state.heroFragments[heroId] -= HERO_SUMMON_FRAGMENT_COST;
-  const star = rollSummonStar(hero.rarity, state.luck);
+  const star = rollSummonStar(hero.rarity, state);
   const inst = createInst(hero.id, star);
   state.instances.push(inst);
   if (state.squad.length < 3) state.squad.push(inst.uid);

@@ -59,7 +59,7 @@ function openCharDetail(hero, star = 1, level = 1) {
   document.getElementById('char-detail-modal').classList.remove('hidden');
 }
 
-let selectedTier = 'bronze', currentTab = 'home', dexFilter = 'all', evolveTargetUid = null, evolveFodder = new Set();
+let selectedTier = 'bronze', selectedForge = 'bronze', currentTab = 'home', sumMode = 'pull', fragSort = 'frags', dexFilter = 'all', evolveTargetUid = null, evolveFodder = new Set();
 let battle = { active: false, auto: false, allies: [], enemies: [], actor: null, targetIdx: 0, type: 'boss' };
 
 function renderHUD() {
@@ -67,7 +67,7 @@ function renderHUD() {
   document.getElementById('hud-silver').textContent = state.tokens.silver;
   document.getElementById('hud-gold').textContent = state.tokens.gold;
   document.getElementById('hud-platinum').textContent = state.tokens.platinum;
-  document.getElementById('hud-luck').textContent = `${state.luck}%`;
+  document.getElementById('hud-luck').textContent = `${state.pullLuck || 0}%`;
   document.getElementById('nav-roster').textContent = state.instances.length;
   document.getElementById('nav-dex').textContent = HEROES.length;
   document.getElementById('nav-rest').textContent = state.restArea.length;
@@ -75,12 +75,7 @@ function renderHUD() {
   document.getElementById('battle-stage').textContent = state.stage;
 }
 
-const TIER_INFO = {
-  bronze: { title: '🥉 Bronze Sigil', desc: 'Drops Common, Uncommon, and Rare hero fragments.' },
-  silver: { title: '🥈 Silver Relic', desc: 'Drops Rare, Epic, and Legend hero fragments.' },
-  gold: { title: '👑 Gold Crown', desc: 'Drops Epic and Legend hero fragments.' },
-  platinum: { title: '💠 Platinum Eclipse', desc: 'Forged from 100 Gold Crowns. Drops pure Legend fragments.' }
-};
+
 
 function showSummonedHeroModal(hero, inst) {
   const grid = document.getElementById('pull-modal-grid');
@@ -103,46 +98,83 @@ function showSummonedHeroModal(hero, inst) {
   document.getElementById('pull-modal').classList.remove('hidden');
 }
 
+const RARITY_RANK = { legend: 5, epic: 4, rare: 3, uncommon: 2, common: 1 };
+
 function renderSummon() {
   document.querySelectorAll('.tier-btn').forEach(b => {
     b.classList.toggle('border-2', b.dataset.tier === selectedTier);
     b.classList.toggle('border-amber-400', b.dataset.tier === selectedTier);
   });
-  document.getElementById('channel-title').textContent = TIER_INFO[selectedTier].title;
-  document.getElementById('channel-desc').textContent = TIER_INFO[selectedTier].desc;
+  document.querySelectorAll('.forge-btn').forEach(b => {
+    b.classList.toggle('border-2', b.dataset.forge === selectedForge);
+    b.classList.toggle('border-amber-400', b.dataset.forge === selectedForge);
+  });
   document.getElementById('serial-bronze').textContent = state.tokens.bronze;
   document.getElementById('serial-silver').textContent = state.tokens.silver;
   document.getElementById('serial-gold').textContent = state.tokens.gold;
   document.getElementById('serial-platinum').textContent = state.tokens.platinum;
-  document.getElementById('summon-luck-label').textContent = `${state.luck}%`;
-  document.getElementById('frag-bronze').textContent = state.tokenFragments.bronze;
-  document.getElementById('frag-silver').textContent = state.tokenFragments.silver;
-  document.getElementById('frag-gold').textContent = state.tokenFragments.gold;
+  document.getElementById('summon-luck-label').textContent = `${state.pullLuck || 0}%`;
+  document.getElementById('summon-starluck-label').textContent = `${state.starLuck || 0}%`;
+  document.getElementById('fowned-bronze').textContent = state.tokens.bronze;
+  document.getElementById('fowned-silver').textContent = state.tokens.silver;
+  document.getElementById('fowned-gold').textContent = state.tokens.gold;
+  document.getElementById('fowned-bronze').textContent = state.tokens.bronze;
+  document.getElementById('fowned-silver').textContent = state.tokens.silver;
+  document.getElementById('fowned-gold').textContent = state.tokens.gold;
+  document.getElementById('fowned-platinum').textContent = state.tokens.platinum;
+
+  const upLabels = { bronze: 'Upgrade 100 Bronze → 1 Silver', silver: 'Upgrade 100 Silver → 1 Gold', gold: 'Upgrade 100 Gold → 1 Platinum', platinum: 'Max Tier' };
+  const disLabels = { bronze: 'Cannot Dismantle', silver: 'Dismantle 1 Silver → 100 Bronze', gold: 'Dismantle 1 Gold → 100 Silver', platinum: 'Dismantle 1 Platinum → 100 Gold' };
+  const upBtn = document.getElementById('btn-forge-upgrade');
+  const disBtn = document.getElementById('btn-forge-dismantle');
+  upBtn.textContent = upLabels[selectedForge];
+  upBtn.disabled = selectedForge === 'platinum';
+  disBtn.textContent = disLabels[selectedForge];
+  disBtn.disabled = selectedForge === 'bronze';
 
   const list = document.getElementById('hero-frag-list');
   list.innerHTML = '';
-  const entries = Object.entries(state.heroFragments).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) {
-    list.innerHTML = '<div class="text-slate-500">Channel Sigils, Relics, or Crowns to collect Hero Fragments.</div>';
-  } else {
-    entries.forEach(([hid, cnt]) => {
-      const h = HEROES.find(x => x.id === hid);
-      const rc = RARITY_COLOR[h.rarity];
-      const row = document.createElement('div');
-      row.className = `flex items-center justify-between bg-slate-900/80 border ${rc.border} rounded-lg px-2.5 py-1.5`;
-      row.innerHTML = `<div class="flex items-center gap-2"><img src="${getHeroArt(h.id)}" class="w-7 h-7 rounded object-cover" /><span class="${rc.text} font-semibold">${ELEM_ICON[h.element]} ${h.name} (${cnt}/100)</span></div>
-        <button data-hsummon="${hid}" ${cnt >= 100 ? '' : 'disabled'} class="btn-tap px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 disabled:opacity-35 text-white font-bold">Summon</button>`;
-      list.appendChild(row);
-    });
-    list.querySelectorAll('[data-hsummon]').forEach(b => b.addEventListener('click', () => {
-      const res = summonFromFragments(state, b.dataset.hsummon);
-      if (res) {
-        tone(780, 0.2, 'sine', 0.08);
-        saveState(); renderAll();
-        showSummonedHeroModal(res.hero, res.inst);
-      }
-    }));
-  }
+  let entries = HEROES.map(h => ({ hero: h, cnt: state.heroFragments[h.id] || 0 })).filter(e => e.cnt > 0);
+  if (fragSort === 'ready') entries = entries.filter(e => e.cnt >= 100).concat(entries.filter(e => e.cnt < 100));
+  else if (fragSort === 'rarity') entries.sort((a, b) => RARITY_RANK[b.hero.rarity] - RARITY_RANK[a.hero.rarity] || b.cnt - a.cnt);
+  else if (fragSort === 'element') entries.sort((a, b) => a.hero.element.localeCompare(b.hero.element) || b.cnt - a.cnt);
+  else entries.sort((a, b) => b.cnt - a.cnt);
+
+  document.getElementById('hero-sort-bar').classList.toggle('hidden', !entries.length);
+  if (!entries.length) return;
+
+  entries.forEach(({ hero: h, cnt }) => {
+    const rc = RARITY_COLOR[h.rarity];
+    const pct = Math.min(100, cnt);
+    const card = document.createElement('div');
+    card.className = `glass rounded-xl border ${rc.border} ${rc.bg} p-2.5 flex items-center justify-between gap-2.5`;
+    card.innerHTML = `
+      <div class="flex items-center gap-2.5 min-w-0 flex-1">
+        <button data-hinspect="${h.id}" class="btn-tap shrink-0 cursor-pointer" title="Inspect Hero">
+          <img src="${getHeroArt(h.id)}" class="w-12 h-12 rounded-lg object-cover border ${rc.border}" />
+        </button>
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold ${rc.text} truncate">${ELEM_ICON[h.element]} ${h.name}</div>
+          <div class="text-[10px] text-slate-300 mt-0.5">${cnt} / 100 Fragments</div>
+          <div class="w-full h-1.5 bg-slate-900 rounded-full mt-1 overflow-hidden"><div class="h-full ${cnt >= 100 ? 'bg-emerald-400' : 'bg-indigo-400'}" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+      <button data-hsummon="${h.id}" ${cnt >= 100 ? '' : 'disabled'} class="btn-tap px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-[11px] font-bold text-white shrink-0">Summon</button>
+    `;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('[data-hinspect]').forEach(b => b.addEventListener('click', () => {
+    const h = HEROES.find(x => x.id === b.dataset.hinspect);
+    if (h) openCharDetail(h, 1, 1);
+  }));
+  list.querySelectorAll('[data-hsummon]').forEach(b => b.addEventListener('click', () => {
+    const res = summonFromFragments(state, b.dataset.hsummon);
+    if (res) {
+      tone(780, 0.2, 'sine', 0.08);
+      saveState(); renderAll();
+      showSummonedHeroModal(res.hero, res.inst);
+    }
+  }));
 }
 
 function renderRoster() {
@@ -404,7 +436,7 @@ function finishBattle(won) {
       const bF = 35 + state.stage * 8, sF = 12 + state.stage * 3, gF = state.stage >= 3 ? 5 + state.stage : 2;
       state.tokenFragments.bronze += bF; state.tokenFragments.silver += sF; state.tokenFragments.gold += gF;
       const luckDrop = Math.random() < 0.05;
-      if (luckDrop) state.luck = Math.min(50, +(state.luck + 1).toFixed(2));
+      if (luckDrop) state.pullLuck = Math.min(40, +((state.pullLuck || 0) + 1).toFixed(2));
       state.stage += 1;
       logBattle(`BOSS CLEARED! +${exp} EXP, +${bF}🥉 +${sF}🥈 +${gF}👑 frags${luckDrop ? ' +1% LUCK!' : ''}`, 'text-emerald-400 font-bold');
     } else {
@@ -533,7 +565,7 @@ function handlePull(n) {
   saveState(); renderAll();
 
   const thrown = document.getElementById('thrown-sigil');
-  thrown.textContent = TIER_ICON[selectedTier];
+  thrown.src = `assets/tokens/${selectedTier}.jpg`;
   thrown.classList.remove('hidden', 'throw-pit-anim');
   void thrown.offsetWidth;
   thrown.classList.add('throw-pit-anim');
@@ -579,14 +611,55 @@ document.getElementById('btn-pull-10').addEventListener('click', () => handlePul
 document.getElementById('btn-pull-100').addEventListener('click', () => handlePull(100));
 document.getElementById('btn-close-pull').addEventListener('click', () => document.getElementById('pull-modal').classList.add('hidden'));
 
-['bronze', 'silver', 'gold'].forEach(t => {
-  document.getElementById(`craft-${t}`).addEventListener('click', () => {
-    if (state.tokenFragments[t] >= 100) { state.tokenFragments[t] -= 100; state.tokens[t] += 1; saveState(); renderAll(); }
-  });
-  document.getElementById(`up-${t}`).addEventListener('click', () => {
-    const next = t === 'bronze' ? 'silver' : t === 'silver' ? 'gold' : 'platinum';
-    if (state.tokens[t] >= 100) { state.tokens[t] -= 100; state.tokens[next] += 1; saveState(); renderAll(); }
-  });
+document.querySelectorAll('.forge-btn').forEach(b => b.addEventListener('click', () => {
+  selectedForge = b.dataset.forge;
+  document.getElementById('forge-msg').textContent = '';
+  renderSummon();
+}));
+function playForgeAnim(tierId, text) {
+  const msg = document.getElementById('forge-msg');
+  const prev = document.getElementById('forge-item-preview');
+  const burst = document.getElementById('forge-burst');
+  prev.src = `assets/tokens/${tierId}.jpg`;
+  prev.classList.remove('hidden');
+  burst.classList.remove('hidden', 'summon-burst-anim');
+  void burst.offsetWidth;
+  burst.classList.add('summon-burst-anim');
+  msg.textContent = text;
+  setTimeout(() => {
+    prev.classList.add('hidden');
+    burst.classList.add('hidden');
+  }, 550);
+}
+
+document.getElementById('btn-forge-upgrade').addEventListener('click', () => {
+  const msg = document.getElementById('forge-msg');
+  const next = selectedForge === 'bronze' ? 'silver' : selectedForge === 'silver' ? 'gold' : selectedForge === 'gold' ? 'platinum' : null;
+  if (!next) return;
+  if (state.tokens[selectedForge] >= 100) {
+    state.tokens[selectedForge] -= 100;
+    state.tokens[next] += 1;
+    tone(780, 0.18, 'triangle', 0.08);
+    saveState(); renderAll();
+    playForgeAnim(next, `Forged 1× ${TOKENS[next].name} from 100 ${TOKENS[selectedForge].name}s!`);
+  } else {
+    msg.textContent = `Need 100 ${TOKENS[selectedForge].name}s to upgrade.`;
+  }
+});
+
+document.getElementById('btn-forge-dismantle').addEventListener('click', () => {
+  const msg = document.getElementById('forge-msg');
+  const prevTier = selectedForge === 'silver' ? 'bronze' : selectedForge === 'gold' ? 'silver' : selectedForge === 'platinum' ? 'gold' : null;
+  if (!prevTier) return;
+  if (state.tokens[selectedForge] >= 1) {
+    state.tokens[selectedForge] -= 1;
+    state.tokens[prevTier] += 100;
+    tone(520, 0.16, 'triangle', 0.07);
+    saveState(); renderAll();
+    playForgeAnim(prevTier, `Dismantled 1 ${TOKENS[selectedForge].name} → 100 ${TOKENS[prevTier].name}s!`);
+  } else {
+    msg.textContent = `Need at least 1 ${TOKENS[selectedForge].name} to dismantle.`;
+  }
 });
 
 document.getElementById('btn-cancel-evolve').addEventListener('click', () => document.getElementById('evolve-modal').classList.add('hidden'));
@@ -627,15 +700,31 @@ initFirebaseSync({
 
 
 document.getElementById('btn-close-char').addEventListener('click', () => document.getElementById('char-detail-modal').classList.add('hidden'));
-function setSumTab(name) {
-  ['channel', 'forge', 'awaken'].forEach(t => {
-    document.getElementById(`panel-sum-${t}`).classList.toggle('hidden', t !== name);
-    document.getElementById(`tab-sum-${t}`).className = t === name ? 'py-1.5 rounded-md bg-indigo-600 text-white' : 'py-1.5 rounded-md text-slate-300';
+const SUM_BG = { pull: 'assets/summon_bg.jpg', forge: 'assets/forge_bg.jpg', heroes: 'assets/banner.jpg' };
+const SUM_TITLE = { pull: '✦ Shard Pull Altar', forge: '⚒ Arcane Forge', heroes: '🌟 Hero Summon Shrine' };
+
+function setSumMode(name) {
+  sumMode = name;
+  document.getElementById('summon-bg-img').src = SUM_BG[name];
+  document.getElementById('summon-mode-heading').textContent = SUM_TITLE[name];
+  document.getElementById('left-pull-list').classList.toggle('hidden', name !== 'pull');
+  document.getElementById('left-forge-list').classList.toggle('hidden', name !== 'forge');
+  document.getElementById('center-pull-area').classList.toggle('hidden', name !== 'pull');
+  document.getElementById('center-forge-area').classList.toggle('hidden', name !== 'forge');
+  document.getElementById('center-heroes-area').classList.toggle('hidden', name !== 'heroes');
+  ['pull', 'forge', 'heroes'].forEach(t => {
+    const btn = document.getElementById(`tab-sum-${t}`);
+    btn.classList.toggle('border-2', t === name);
+    btn.classList.toggle('border-indigo-400', t === name);
   });
 }
-document.getElementById('tab-sum-channel').addEventListener('click', () => setSumTab('channel'));
-document.getElementById('tab-sum-forge').addEventListener('click', () => setSumTab('forge'));
-document.getElementById('tab-sum-awaken').addEventListener('click', () => setSumTab('awaken'));
+document.getElementById('tab-sum-pull').addEventListener('click', () => setSumMode('pull'));
+document.getElementById('tab-sum-forge').addEventListener('click', () => setSumMode('forge'));
+document.getElementById('tab-sum-heroes').addEventListener('click', () => setSumMode('heroes'));
+document.getElementById('frag-sort').addEventListener('change', (e) => {
+  fragSort = e.target.value;
+  renderSummon();
+});
 
 document.getElementById('btn-reset-all').addEventListener('click', () => {
   state = createDefaultState();
